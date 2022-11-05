@@ -79,6 +79,11 @@ func TestAuthValidateUser(t *testing.T) {
 	v = ValidateUser("test@test.com", "default")
 	assert.True(v, "should allow user from allowed domain")
 
+	// Should match regardless of domain case
+	config.Domains = []string{"test.com"}
+	v = ValidateUser("test@TeSt.com", "default")
+	assert.True(v, "should allow user from allowed domain, regardless of case")
+
 	// Should block non whitelisted email address
 	config.Domains = []string{}
 	config.Whitelist = []string{"test@test.com"}
