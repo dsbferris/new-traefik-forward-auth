@@ -215,6 +215,96 @@ func TestAuthValidateUser(t *testing.T) {
 	assert.True(v, "should allow user in whitelist")
 }
 
+func TestAuthValidateRedirect(t *testing.T) {
+	assert := assert.New(t)
+	config, _ = NewConfig([]string{})
+
+	newRedirectRequest := func(urlStr string) *http.Request {
+		u, err := url.Parse(urlStr)
+		assert.Nil(err)
+
+		r, _ := http.NewRequest("GET", urlStr, nil)
+		r.Header.Add("X-Forwarded-Proto", u.Scheme)
+		r.Header.Add("X-Forwarded-Host", u.Host)
+		r.Header.Add("X-Forwarded-Uri", u.RequestURI())
+
+		return r
+	}
+
+	errStr := "Redirect host does not match request host (must match when not using auth host)"
+
+	_, err := ValidateRedirect(
+		newRedirectRequest("http://app.example.com/_oauth?state=123"),
+		"http://app.example.com.bad.com",
+	)
+	if assert.Error(err) {
+		assert.Equal(errStr, err.Error(), "Should not allow redirect to subdomain")
+	}
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://app.example.com/_oauth?state=123"),
+		"http://app.example.combad.com",
+	)
+	if assert.Error(err) {
+		assert.Equal(errStr, err.Error(), "Should not allow redirect to overlapping domain")
+	}
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://app.example.com/_oauth?state=123"),
+		"http://example.com",
+	)
+	if assert.Error(err) {
+		assert.Equal(errStr, err.Error(), "Should not allow redirect from subdomain")
+	}
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://app.example.com/_oauth?state=123"),
+		"http://app.example.com/profile",
+	)
+	assert.Nil(err, "Should allow same domain")
+
+	//
+	// With Auth Host
+	//
+	config.AuthHost = "auth.example.com"
+	config.CookieDomains = []CookieDomain{*NewCookieDomain("example.com")}
+	errStr = "Redirect host does not match any expected hosts (should match cookie domain when using auth host)"
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://app.example.com/_oauth?state=123"),
+		"http://app.example.com.bad.com",
+	)
+	if assert.Error(err) {
+		assert.Equal(errStr, err.Error(), "Should not allow redirect to subdomain")
+	}
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://app.example.com/_oauth?state=123"),
+		"http://app.example.combad.com",
+	)
+	if assert.Error(err) {
+		assert.Equal(errStr, err.Error(), "Should not allow redirect to overlapping domain")
+	}
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://auth.example.com/_oauth?state=123"),
+		"http://app.example.com/profile",
+	)
+	assert.Nil(err, "Should allow between subdomains when using auth host")
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://auth.example.com/_oauth?state=123"),
+		"http://auth.example.com/profile",
+	)
+	assert.Nil(err, "Should allow same domain when using auth host")
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://auth.example.com/_oauth?state=123"),
+		"http://example.com/profile",
+	)
+	assert.Nil(err, "Should allow from subdomain when using auth host")
+}
+
 func TestRedirectUri(t *testing.T) {
 	assert := assert.New(t)
 
