@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/containous/traefik/v2/pkg/rules"
 	"github.com/sirupsen/logrus"
@@ -225,6 +226,12 @@ func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *ht
 		return
 	}
 
+	// clean existing CSRF cookie
+	for _, v := range r.Cookies() {
+		if strings.Contains(v.Name, config.CSRFCookieName) {
+			http.SetCookie(w, ClearCSRFCookie(r, v))
+		}
+	}
 	// Set the CSRF cookie
 	csrf := MakeCSRFCookie(r, nonce)
 	http.SetCookie(w, csrf)
