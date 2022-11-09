@@ -17,8 +17,12 @@ I have merged several pull requests that have not (yet?) been merged upstream:
 I have also updated all the dependencies, and switched to building with Go 1.19.
 The Dockerfile has been switched from Alpine to using the official Go container for building the binary and a [distroless](https://github.com/GoogleContainerTools/distroless) image for runtime.
 
+I wrote [a blog post](https://jordemort.dev/blog/single-sign-on-with-mastodon/) about how I use this.
 Note that I only use the Generic OAuth provider.
 I haven't tried using the other providers, but all the tests still pass.
+
+This version now builds against Traefik 2.9, so you should be able to use all of the latest matchers, but `ClientIP` does not appear to be working as you might expect.
+It seems to be a better bet to match against the `X-Forwarded-For` header.
 
 ## Why?
 
