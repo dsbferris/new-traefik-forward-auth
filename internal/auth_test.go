@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jordemort/traefik-forward-auth/internal/provider"
 	"github.com/stretchr/testify/assert"
+	"github.com/traPtitech/traefik-forward-auth/internal/provider"
 )
 
 /**

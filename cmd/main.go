@@ -4,22 +4,22 @@ import (
 	"fmt"
 	"net/http"
 
-	internal "github.com/jordemort/traefik-forward-auth/internal"
+	"github.com/traPtitech/traefik-forward-auth/internal"
 )
 
 // Main
 func main() {
 	// Parse options
-	config := internal.NewGlobalConfig()
+	config := tfa.NewGlobalConfig()
 
 	// Setup logger
-	log := internal.NewDefaultLogger()
+	log := tfa.NewDefaultLogger()
 
 	// Perform config validation
 	config.Validate()
 
 	// Build server
-	server := internal.NewServer()
+	server := tfa.NewServer()
 
 	// Attach router to default server
 	http.HandleFunc("/", server.RootHandler)

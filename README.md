@@ -61,7 +61,7 @@ It seems to be a better bet to match against the `X-Forwarded-For` header.
 
 ## Releases
 
-Releases of this fork are published to the [GitHub Container Registry](https://github.com/jordemort/traefik-forward-auth/pkgs/container/traefik-forward-auth).
+Releases of this fork are published to the [GitHub Container Registry](https://github.com/traPtitech/traefik-forward-auth/pkgs/container/traefik-forward-auth).
 
 I currently only publish a `latest` tag.
 
