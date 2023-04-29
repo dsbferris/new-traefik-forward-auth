@@ -125,7 +125,7 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 		// Get auth cookie
 		c, err := r.Cookie(config.CookieName)
 		if err != nil {
-			s.authRedirect(logger, w, r, p)
+			s.authRedirect(logger, w, r, p, currentUrl(r), false)
 			return
 		}
 
@@ -134,7 +134,7 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 		if err != nil {
 			if err.Error() == "Cookie has expired" {
 				logger.Info("Cookie has expired")
-				s.authRedirect(logger, w, r, p)
+				s.authRedirect(logger, w, r, p, currentUrl(r), false)
 			} else {
 				logger.WithField("error", err).Warn("Invalid cookie")
 				unauthorized(w)
@@ -221,9 +221,17 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		redirectURL, err := ValidateRedirect(r, redirect)
 		if err != nil {
 			logger.WithFields(logrus.Fields{
-				"receieved_redirect": redirect,
+				"received_redirect": redirect,
 			}).Warnf("Invalid redirect in CSRF. %v", err)
 			http.Error(w, "Not authorized", 401)
+			return
+		}
+
+		// Check error
+		authError := r.URL.Query().Get("error")
+		if authError == "login_required" || authError == "consent_required" {
+			// Retry with without prompt (none) parameter
+			s.authRedirect(logger, w, r, p, redirect, true)
 			return
 		}
 
@@ -273,7 +281,7 @@ func (s *Server) LogoutHandler() http.HandlerFunc {
 	}
 }
 
-func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *http.Request, p provider.Provider) {
+func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *http.Request, p provider.Provider, returnUrl string, forcePrompt bool) {
 	// Error indicates no cookie, generate nonce
 	err, nonce := Nonce()
 	if err != nil {
@@ -299,7 +307,7 @@ func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *ht
 	}
 
 	// Forward them on
-	loginURL := p.GetLoginURL(redirectUri(r), MakeState(r, p, nonce))
+	loginURL := p.GetLoginURL(redirectUri(r), MakeState(returnUrl, p, nonce), forcePrompt)
 	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
 
 	logger.WithFields(logrus.Fields{

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
 	"github.com/traPtitech/traefik-forward-auth/internal/provider"
 )
 
@@ -486,22 +487,21 @@ func TestValidateState(t *testing.T) {
 func TestMakeState(t *testing.T) {
 	assert := assert.New(t)
 
-	r := httptest.NewRequest("GET", "http://example.com/hello", nil)
-	r.Header.Add("X-Forwarded-Proto", "http")
+	redirect := "http://example.com/hello"
 
 	// Test with google
 	p := provider.Google{}
-	state := MakeState(r, &p, "nonce")
+	state := MakeState(redirect, &p, "nonce")
 	assert.Equal("nonce:google:http://example.com/hello", state)
 
 	// Test with OIDC
 	p2 := provider.OIDC{}
-	state = MakeState(r, &p2, "nonce")
+	state = MakeState(redirect, &p2, "nonce")
 	assert.Equal("nonce:oidc:http://example.com/hello", state)
 
 	// Test with Generic OAuth
 	p3 := provider.GenericOAuth{}
-	state = MakeState(r, &p3, "nonce")
+	state = MakeState(redirect, &p3, "nonce")
 	assert.Equal("nonce:generic-oauth:http://example.com/hello", state)
 }
 

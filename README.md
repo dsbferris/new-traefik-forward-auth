@@ -201,6 +201,7 @@ OIDC Provider:
       --providers.oidc.issuer-url=                          Issuer URL [$PROVIDERS_OIDC_ISSUER_URL]
       --providers.oidc.client-id=                           Client ID [$PROVIDERS_OIDC_CLIENT_ID]
       --providers.oidc.client-secret=                       Client Secret [$PROVIDERS_OIDC_CLIENT_SECRET]
+      --providers.oidc.prompt=                              Optional prompt query [$PROVIDERS_OIDC_PROMPT]
       --providers.oidc.resource=                            Optional resource indicator [$PROVIDERS_OIDC_RESOURCE]
 
 Generic OAuth2 Provider:
@@ -211,6 +212,7 @@ Generic OAuth2 Provider:
       --providers.generic-oauth.client-secret=              Client Secret [$PROVIDERS_GENERIC_OAUTH_CLIENT_SECRET]
       --providers.generic-oauth.scope=                      Scopes (default: profile, email) [$PROVIDERS_GENERIC_OAUTH_SCOPE]
       --providers.generic-oauth.token-style=[header|query]  How token is presented when querying the User URL (default: header) [$PROVIDERS_GENERIC_OAUTH_TOKEN_STYLE]
+      --providers.generic-oauth.prompt=                     Optional prompt query [$PROVIDERS_GENERIC_OAUTH_PROMPT]
       --providers.generic-oauth.resource=                   Optional resource indicator [$PROVIDERS_GENERIC_OAUTH_RESOURCE]
 
 Help Options:

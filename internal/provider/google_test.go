@@ -68,7 +68,7 @@ func TestGoogleGetLoginURL(t *testing.T) {
 	}
 
 	// Check url
-	uri, err := url.Parse(p.GetLoginURL("http://example.com/_oauth", "state"))
+	uri, err := url.Parse(p.GetLoginURL("http://example.com/_oauth", "state", false))
 	assert.Nil(err)
 	assert.Equal("https", uri.Scheme)
 	assert.Equal("google.com", uri.Host)

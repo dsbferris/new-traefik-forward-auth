@@ -347,7 +347,7 @@ func TestConfigValidate(t *testing.T) {
 	assert.Equal(logrus.FatalLevel, logs[1].Level)
 
 	// Should validate rule
-	assert.Equal("invalid rule action, must be \"auth\" or \"allow\"", logs[2].Message)
+	assert.Equal("invalid rule action, must be \"auth\", \"soft-auth\", or \"allow\"", logs[2].Message)
 	assert.Equal(logrus.FatalLevel, logs[2].Level)
 
 	hook.Reset()

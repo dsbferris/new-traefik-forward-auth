@@ -161,7 +161,7 @@ func redirectBase(r *http.Request) string {
 }
 
 // Return url
-func returnUrl(r *http.Request) string {
+func currentUrl(r *http.Request) string {
 	return fmt.Sprintf("%s%s", redirectBase(r), r.URL.Path)
 }
 
@@ -286,8 +286,8 @@ func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider stri
 }
 
 // MakeState generates a state value
-func MakeState(r *http.Request, p provider.Provider, nonce string) string {
-	return fmt.Sprintf("%s:%s:%s", nonce, p.Name(), returnUrl(r))
+func MakeState(returnUrl string, p provider.Provider, nonce string) string {
+	return fmt.Sprintf("%s:%s:%s", nonce, p.Name(), returnUrl)
 }
 
 // ValidateState checks whether the state is of right length.

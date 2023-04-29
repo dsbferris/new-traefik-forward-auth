@@ -20,7 +20,7 @@ type Providers struct {
 // Provider is used to authenticate users
 type Provider interface {
 	Name() string
-	GetLoginURL(redirectURI, state string) string
+	GetLoginURL(redirectURI, state string, forcePrompt bool) string
 	ExchangeCode(redirectURI, code string) (string, error)
 	GetUser(token, UserPath string) (string, error)
 	Setup() error
@@ -50,6 +50,7 @@ func GetUser(r io.Reader, UserPath string) (string, error) {
 
 // OAuthProvider is a provider using the oauth2 library
 type OAuthProvider struct {
+	Prompt   string `long:"prompt" env:"PROMPT" description:"Optional prompt query"`
 	Resource string `long:"resource" env:"RESOURCE" description:"Optional resource indicator"`
 
 	Config *oauth2.Config
@@ -65,14 +66,18 @@ func (p *OAuthProvider) ConfigCopy(redirectURI string) oauth2.Config {
 }
 
 // OAuthGetLoginURL provides a base "GetLoginURL" for proiders using OAauth2
-func (p *OAuthProvider) OAuthGetLoginURL(redirectURI, state string) string {
+func (p *OAuthProvider) OAuthGetLoginURL(redirectURI, state string, forcePrompt bool) string {
 	config := p.ConfigCopy(redirectURI)
 
+	var options []oauth2.AuthCodeOption
+	if p.Prompt != "" && !forcePrompt {
+		options = append(options, oauth2.SetAuthURLParam("prompt", p.Prompt))
+	}
 	if p.Resource != "" {
-		return config.AuthCodeURL(state, oauth2.SetAuthURLParam("resource", p.Resource))
+		options = append(options, oauth2.SetAuthURLParam("resource", p.Resource))
 	}
 
-	return config.AuthCodeURL(state)
+	return config.AuthCodeURL(state, options...)
 }
 
 // OAuthExchangeCode provides a base "ExchangeCode" for proiders using OAauth2
