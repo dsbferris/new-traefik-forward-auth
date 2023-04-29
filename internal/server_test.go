@@ -304,7 +304,7 @@ func TestServerLogout(t *testing.T) {
 
 	req := newDefaultHttpRequest("/_oauth/logout")
 	res, _ := doHttpRequest(req, nil)
-	require.Equal(401, res.StatusCode, "should return a 401")
+	require.Equal(307, res.StatusCode, "should return a 307")
 
 	// Check for cookie
 	var cookie *http.Cookie
@@ -317,8 +317,7 @@ func TestServerLogout(t *testing.T) {
 	require.Less(cookie.Expires.Local().Unix(), time.Now().Local().Unix()-50, "cookie should have expired")
 
 	// Test with redirect
-	config.LogoutRedirect = "http://example.com/path"
-	req = newDefaultHttpRequest("/_oauth/logout")
+	req = newDefaultHttpRequest("/_oauth/logout?redirect=/path")
 	res, _ = doHttpRequest(req, nil)
 	require.Equal(307, res.StatusCode, "should return a 307")
 
