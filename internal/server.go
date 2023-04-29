@@ -39,11 +39,7 @@ func (s *Server) buildRoutes() {
 	// Let's build a router
 	for name, rule := range config.Rules {
 		matchRule := rule.formattedRule()
-		if rule.Action == "allow" {
-			s.muxer.AddRoute(matchRule, 1, s.AllowHandler(name))
-		} else {
-			s.muxer.AddRoute(matchRule, 1, s.AuthHandler(rule.Provider, name))
-		}
+		s.muxer.AddRoute(matchRule, 1, s.Handler(rule.Action, rule.Provider, name))
 	}
 
 	// Add callback handler
@@ -53,11 +49,7 @@ func (s *Server) buildRoutes() {
 	s.muxer.Handle(config.Path+"/logout", s.LogoutHandler())
 
 	// Add a default handler
-	if config.DefaultAction == "allow" {
-		s.muxer.NewRoute().Handler(s.AllowHandler("default"))
-	} else {
-		s.muxer.NewRoute().Handler(s.AuthHandler(config.DefaultProvider, "default"))
-	}
+	s.muxer.NewRoute().Handler(s.Handler(config.DefaultAction, config.DefaultProvider, "default"))
 }
 
 // RootHandler Overwrites the request method, host and URL with those from the
@@ -76,17 +68,41 @@ func (s *Server) RootHandler(w http.ResponseWriter, r *http.Request) {
 	s.muxer.ServeHTTP(w, r)
 }
 
-// AllowHandler Allows requests
-func (s *Server) AllowHandler(rule string) http.HandlerFunc {
+func (s *Server) Handler(action, providerName, rule string) http.HandlerFunc {
+	switch action {
+	case "allow":
+		return s.allowHandler(rule)
+	case "soft-auth":
+		return s.softAuthHandler(providerName, rule)
+	case "auth":
+		return s.hardAuthHandler(providerName, rule)
+	default:
+		panic("unknown action " + action)
+	}
+}
+
+// allowHandler Allows requests
+func (s *Server) allowHandler(rule string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.logger(r, "Allow", rule, "Allowing request")
 		w.WriteHeader(200)
 	}
 }
 
-// AuthHandler Authenticates requests
-func (s *Server) AuthHandler(providerName, rule string) http.HandlerFunc {
+func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerFunc {
 	p, _ := config.GetConfiguredProvider(providerName)
+
+	var unauthorized func(w http.ResponseWriter)
+	if soft {
+		unauthorized = func(w http.ResponseWriter) {
+			w.Header().Set(config.HeaderName, config.SoftAuthUser)
+			w.WriteHeader(200)
+		}
+	} else {
+		unauthorized = func(w http.ResponseWriter) {
+			http.Error(w, "Unauthorized", 401)
+		}
+	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Logging setup
@@ -121,7 +137,7 @@ func (s *Server) AuthHandler(providerName, rule string) http.HandlerFunc {
 				s.authRedirect(logger, w, r, p)
 			} else {
 				logger.WithField("error", err).Warn("Invalid cookie")
-				http.Error(w, "Not authorized", 401)
+				unauthorized(w)
 			}
 			return
 		}
@@ -130,7 +146,7 @@ func (s *Server) AuthHandler(providerName, rule string) http.HandlerFunc {
 		valid := ValidateUser(user, rule)
 		if !valid {
 			logger.WithField("user", escapeNewlines(user)).Warn("Invalid user")
-			http.Error(w, "User is not authorized", 401)
+			unauthorized(w)
 			return
 		}
 
@@ -139,6 +155,16 @@ func (s *Server) AuthHandler(providerName, rule string) http.HandlerFunc {
 		w.Header().Set(config.HeaderName, user)
 		w.WriteHeader(200)
 	}
+}
+
+// softAuthHandler Soft-authenticates requests
+func (s *Server) softAuthHandler(providerName, rule string) http.HandlerFunc {
+	return s.authHandler(providerName, rule, true)
+}
+
+// hardAuthHandler Authenticates requests
+func (s *Server) hardAuthHandler(providerName, rule string) http.HandlerFunc {
+	return s.authHandler(providerName, rule, false)
 }
 
 // AuthCallbackHandler Handles auth callback request

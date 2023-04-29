@@ -170,7 +170,7 @@ Application Options:
       --insecure-cookie                                     Use insecure cookies [$INSECURE_COOKIE]
       --cookie-name=                                        Cookie Name (default: _forward_auth) [$COOKIE_NAME]
       --csrf-cookie-name=                                   CSRF Cookie Name (default: _forward_auth_csrf) [$CSRF_COOKIE_NAME]
-      --default-action=[auth|allow]                         Default action (default: auth) [$DEFAULT_ACTION]
+      --default-action=[auth|soft-auth|allow]               Default action (default: auth) [$DEFAULT_ACTION]
       --default-provider=[google|oidc|generic-oauth]        Default provider (default: google) [$DEFAULT_PROVIDER]
       --domain=                                             Only allow given email domains, comma separated, can be set multiple times [$DOMAIN]
       --header-name=                                        User header name (default: X-Forwarded-User) [$HEADER_NAME]
@@ -179,6 +179,7 @@ Application Options:
       --match-whitelist-or-domain                           Allow users that match *either* whitelist or domain (enabled by default in v3) [$MATCH_WHITELIST_OR_DOMAIN]
       --url-path=                                           Callback URL Path (default: /_oauth) [$URL_PATH]
       --secret=                                             Secret used for signing (required) [$SECRET]
+      --soft-auth-user=                                     Username used in header if unauthorized with soft-auth action (default: -) [$SOFT_AUTH_USER]
       --user-id-path=                                       Dot notation path of a UserID for use with whitelist and X-Forwarded-User (default: email) [$USER_ID_PATH]
       --whitelist=                                          Only allow given UserID, comma separated, can be set multiple times [$WHITELIST]
       --port=                                               Port to listen on (default: 4181) [$PORT]
@@ -280,7 +281,7 @@ All options can be supplied in any of the following ways, in the following prece
 
 - `default-action`
 
-   Specifies the behavior when a request does not match any [rules](#rules). Valid options are `auth` or `allow`.
+   Specifies the behavior when a request does not match any [rules](#rules). Valid options are `auth`, `soft-auth`, or `allow`.
 
    Default: `auth` (i.e. all requests require authentication)
 
@@ -346,6 +347,7 @@ All options can be supplied in any of the following ways, in the following prece
    - `<param>` can be:
        - `action` - same usage as [`default-action`](#default-action), supported values:
            - `auth` (default)
+           - `soft-auth`
            - `allow`
        - `domains` - optional, same usage as [`domain`](#domain)
        - `provider` - same usage as [`default-provider`](#default-provider), supported values:
