@@ -34,7 +34,6 @@ func TestConfigDefaults(t *testing.T) {
 	assert.Len(c.Domains, 0)
 	assert.Equal("X-Forwarded-User", c.HeaderName)
 	assert.Equal(time.Second*time.Duration(43200), c.Lifetime)
-	assert.Equal("", c.LogoutRedirect)
 	assert.False(c.MatchWhitelistOrDomain)
 	assert.Equal("/_oauth", c.Path)
 	assert.Equal("-", c.SoftAuthUser)

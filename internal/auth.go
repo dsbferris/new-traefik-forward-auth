@@ -18,6 +18,8 @@ import (
 
 // Request Validation
 
+var ErrCookieExpired = errors.New("Cookie has expired")
+
 // ValidateCookie verifies that a cookie matches the expected format of:
 // Cookie = hash(secret, cookie domain, user, expires)|expires|user
 func ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
@@ -50,7 +52,7 @@ func ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
 
 	// Has it expired?
 	if time.Unix(expires, 0).Before(time.Now()) {
-		return "", errors.New("Cookie has expired")
+		return "", ErrCookieExpired
 	}
 
 	// Looks valid
@@ -121,6 +123,19 @@ func ValidateDomains(user string, domains CommaSeparatedList) bool {
 		}
 	}
 	return false
+}
+
+func ValidateLoginRedirect(r *http.Request, redirect string) (*url.URL, error) {
+	u, err := url.ParseRequestURI(redirect)
+	if err != nil {
+		return nil, fmt.Errorf("invalid path: %w", err)
+	}
+	if u.EscapedPath() != redirect {
+		return nil, errors.New("invalid path: either not escaped or contains non-path elements")
+	}
+	u.Scheme = r.Header.Get("X-Forwarded-Proto")
+	u.Host = r.Header.Get("X-Forwarded-Host")
+	return u, nil
 }
 
 // ValidateRedirect validates that the given redirect is valid and permitted for

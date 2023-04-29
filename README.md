@@ -175,7 +175,6 @@ Application Options:
       --domain=                                             Only allow given email domains, comma separated, can be set multiple times [$DOMAIN]
       --header-name=                                        User header name (default: X-Forwarded-User) [$HEADER_NAME]
       --lifetime=                                           Lifetime in seconds (default: 43200) [$LIFETIME]
-      --logout-redirect=                                    URL to redirect to following logout [$LOGOUT_REDIRECT]
       --match-whitelist-or-domain                           Allow users that match *either* whitelist or domain (enabled by default in v3) [$MATCH_WHITELIST_OR_DOMAIN]
       --url-path=                                           Callback URL Path (default: /_oauth) [$URL_PATH]
       --secret=                                             Secret used for signing (required) [$SECRET]
@@ -306,10 +305,6 @@ All options can be supplied in any of the following ways, in the following prece
    How long a successful authentication session should last, in seconds.
 
    Default: `43200` (12 hours)
-
-- `logout-redirect`
-
-   When set, users will be redirected to this URL following logout.
 
 - `match-whitelist-or-domain`
 
@@ -536,11 +531,19 @@ Two criteria must be met for an `auth-host` to be used:
 
 Please note: For Auth Host mode to work, you must ensure that requests to your auth-host are routed to the traefik-forward-auth container, as demonstrated with the service labels in the [docker-compose-auth.yml](examples/traefik-v2/swarm/docker-compose-auth-host.yml) example and the [ingressroute resource](examples/traefik-v2/kubernetes/advanced-separate-pod/traefik-forward-auth/ingress.yaml) in a kubernetes example.
 
+### Logging in
+
+The service provides an endpoint to allow users to explicitly login.
+This is useful for routes in which the auth action is `soft-auth`.
+
+You can set `redirect` query parameter to redirect on login (defaults to `/`).
+
 ### Logging Out
 
 The service provides an endpoint to clear a users session and "log them out". The path is created by appending `/logout` to your configured `path` and so with the default settings it will be: `/_oauth/logout`.
 
-You can use the `logout-redirect` config option to redirect users to another URL following logout (note: the user will not have a valid auth cookie after being logged out).
+You can set `redirect` query parameter to redirect on logout (defaults to `/`).
+Note that the user will not have a valid auth cookie after being logged out.
 
 Note: This only clears the auth cookie from the users browser and as this service is stateless, it does not invalidate the cookie against future use. So if the cookie was recorded, for example, it could continue to be used for the duration of the cookie lifetime.
 

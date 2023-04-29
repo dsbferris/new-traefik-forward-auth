@@ -1,6 +1,7 @@
 package tfa
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -39,13 +40,17 @@ func (s *Server) buildRoutes() {
 	// Let's build a router
 	for name, rule := range config.Rules {
 		matchRule := rule.formattedRule()
-		s.muxer.AddRoute(matchRule, 1, s.Handler(rule.Action, rule.Provider, name))
+		err = s.muxer.AddRoute(matchRule, 1, s.Handler(rule.Action, rule.Provider, name))
+		if err != nil {
+			panic(err) // should not occur because rule is validated beforehand
+		}
 	}
 
 	// Add callback handler
 	s.muxer.Handle(config.Path, s.AuthCallbackHandler())
 
-	// Add logout handler
+	// Add login / logout handler
+	s.muxer.Handle(config.Path+"/login", s.LoginHandler("default"))
 	s.muxer.Handle(config.Path+"/logout", s.LogoutHandler())
 
 	// Add a default handler
@@ -89,6 +94,24 @@ func (s *Server) allowHandler(rule string) http.HandlerFunc {
 	}
 }
 
+func GetUserFromCookie(r *http.Request) (*string, error) {
+	// Get auth cookie
+	c, err := r.Cookie(config.CookieName)
+	if err != nil {
+		return nil, nil
+	}
+
+	// Validate cookie
+	user, err := ValidateCookie(r, c)
+	if err != nil {
+		if err == ErrCookieExpired {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("invalid cookie: %w", err)
+	}
+	return &user, nil
+}
+
 func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerFunc {
 	p, _ := config.GetConfiguredProvider(providerName)
 
@@ -122,37 +145,29 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 			}
 		}
 
-		// Get auth cookie
-		c, err := r.Cookie(config.CookieName)
+		// Get user from cookie
+		user, err := GetUserFromCookie(r)
 		if err != nil {
+			logger.WithField("error", err).Warn("invalid user")
+			unauthorized(w)
+			return
+		}
+		if user == nil {
 			s.authRedirect(logger, w, r, p, currentUrl(r), false)
 			return
 		}
 
-		// Validate cookie
-		user, err := ValidateCookie(r, c)
-		if err != nil {
-			if err.Error() == "Cookie has expired" {
-				logger.Info("Cookie has expired")
-				s.authRedirect(logger, w, r, p, currentUrl(r), false)
-			} else {
-				logger.WithField("error", err).Warn("Invalid cookie")
-				unauthorized(w)
-			}
-			return
-		}
-
 		// Validate user
-		valid := ValidateUser(user, rule)
+		valid := ValidateUser(*user, rule)
 		if !valid {
-			logger.WithField("user", escapeNewlines(user)).Warn("Invalid user")
+			logger.WithField("user", escapeNewlines(*user)).Warn("Invalid user")
 			unauthorized(w)
 			return
 		}
 
 		// Valid request
 		logger.Debug("Allowing valid request")
-		w.Header().Set(config.HeaderName, user)
+		w.Header().Set(config.HeaderName, *user)
 		w.WriteHeader(200)
 	}
 }
@@ -264,20 +279,74 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 	}
 }
 
+// LoginHandler logs a user in
+func (s *Server) LoginHandler(providerName string) http.HandlerFunc {
+	p, _ := config.GetConfiguredProvider(providerName)
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		logger := s.logger(r, "Login", "default", "Handling login")
+		logger.Info("Explicit user login")
+
+		// Calculate and validate redirect
+		redirect := r.URL.Query().Get("redirect")
+		if redirect == "" {
+			redirect = "/"
+		}
+		redirectURL, err := ValidateLoginRedirect(r, redirect)
+		if err != nil {
+			logger.WithFields(logrus.Fields{
+				"received_redirect": redirect,
+			}).Warnf("Invalid redirect in login: %v", err)
+			http.Error(w, "Invalid redirect: "+err.Error(), 400)
+			return
+		}
+
+		// Get user
+		user, err := GetUserFromCookie(r)
+		if err != nil {
+			logger.WithField("error", err).Warn("invalid user")
+			http.Error(w, "Invalid cookie", 400)
+			return
+		}
+		if user != nil { // Already logged in
+			if redirectURL != nil {
+				http.Redirect(w, r, redirectURL.String(), http.StatusTemporaryRedirect)
+				return
+			} else {
+				w.WriteHeader(200)
+				return
+			}
+		}
+
+		// Login
+		s.authRedirect(logger, w, r, p, redirectURL.String(), false)
+	}
+}
+
 // LogoutHandler logs a user out
 func (s *Server) LogoutHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Clear cookie
-		http.SetCookie(w, ClearCookie(r))
-
 		logger := s.logger(r, "Logout", "default", "Handling logout")
 		logger.Info("Logged out user")
 
-		if config.LogoutRedirect != "" {
-			http.Redirect(w, r, config.LogoutRedirect, http.StatusTemporaryRedirect)
-		} else {
-			http.Error(w, "You have been logged out", 401)
+		// Clear cookie
+		http.SetCookie(w, ClearCookie(r))
+
+		// Calculate and validate redirect
+		redirect := r.URL.Query().Get("redirect")
+		if redirect == "" {
+			redirect = "/"
 		}
+		redirectURL, err := ValidateLoginRedirect(r, redirect)
+		if err != nil {
+			logger.WithFields(logrus.Fields{
+				"received_redirect": redirect,
+			}).Warnf("Invalid redirect in login: %v", err)
+			http.Error(w, "Invalid redirect: "+err.Error(), 400)
+			return
+		}
+
+		http.Redirect(w, r, redirectURL.String(), http.StatusTemporaryRedirect)
 	}
 }
 
