@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/thomseddon/go-flags"
+
 	"github.com/traPtitech/traefik-forward-auth/internal/provider"
 )
 
@@ -34,6 +35,7 @@ type Config struct {
 	DefaultAction          string               `long:"default-action" env:"DEFAULT_ACTION" default:"auth" choice:"auth" choice:"allow" description:"Default action"`
 	DefaultProvider        string               `long:"default-provider" env:"DEFAULT_PROVIDER" default:"google" choice:"google" choice:"oidc" choice:"generic-oauth" description:"Default provider"`
 	Domains                CommaSeparatedList   `long:"domain" env:"DOMAIN" env-delim:"," description:"Only allow given email domains, comma separated, can be set multiple times"`
+	HeaderName             string               `long:"header-name" env:"HEADER_NAME" default:"X-Forwarded-User" description:"User header name"`
 	LifetimeString         int                  `long:"lifetime" env:"LIFETIME" default:"43200" description:"Lifetime in seconds"`
 	LogoutRedirect         string               `long:"logout-redirect" env:"LOGOUT_REDIRECT" description:"URL to redirect to following logout"`
 	MatchWhitelistOrDomain bool                 `long:"match-whitelist-or-domain" env:"MATCH_WHITELIST_OR_DOMAIN" description:"Allow users that match *either* whitelist or domain (enabled by default in v3)"`
@@ -292,6 +294,10 @@ func (c *Config) Validate() {
 	// Check for show stopper errors
 	if len(c.Secret) == 0 {
 		log.Fatal("\"secret\" option must be set")
+	}
+
+	if len(c.HeaderName) == 0 {
+		log.Fatal("\"header-name\" option must be set")
 	}
 
 	// Setup default provider

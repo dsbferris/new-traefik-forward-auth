@@ -136,7 +136,7 @@ func (s *Server) AuthHandler(providerName, rule string) http.HandlerFunc {
 
 		// Valid request
 		logger.Debug("Allowing valid request")
-		w.Header().Set("X-Forwarded-User", user)
+		w.Header().Set(config.HeaderName, user)
 		w.WriteHeader(200)
 	}
 }

@@ -32,6 +32,7 @@ func TestConfigDefaults(t *testing.T) {
 	assert.Equal("auth", c.DefaultAction)
 	assert.Equal("google", c.DefaultProvider)
 	assert.Len(c.Domains, 0)
+	assert.Equal(c.HeaderName, "X-Forwarded-User")
 	assert.Equal(time.Second*time.Duration(43200), c.Lifetime)
 	assert.Equal("", c.LogoutRedirect)
 	assert.False(c.MatchWhitelistOrDomain)
