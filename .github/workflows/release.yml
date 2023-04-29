@@ -1,57 +1,49 @@
-name: Release
+name: release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - v*.*.*
+    branches-ignore:
+      - '**'
+
+env:
+  IMAGE_NAME: traefik-forward-auth
 
 jobs:
-
-  build:
-    name: Build release binaries
+  build-images:
+    name: Build Images
     runs-on: ubuntu-latest
     steps:
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - name: Set IMAGE_TAG env
+        run: echo "IMAGE_TAG=$(echo ${GITHUB_REF:11})" >> $GITHUB_ENV
 
-    - name: Set up Go 1.x
-      uses: actions/setup-go@v3
-      with:
-        go-version: ^1.13
-      id: go
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Builder instance name
+        run: echo ${{ steps.buildx.outputs.name }}
+      - name: Available platforms
+        run: echo ${{ steps.buildx.outputs.platforms }}
 
-    - name: Build AMD64
-      run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -installsuffix nocgo -v -o traefik-forward-auth_amd64 ./cmd
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: traptitech
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build ARM
-      run: CGO_ENABLED=0 GOOS=linux GOARCH=arm GO111MODULE=on go build -a -installsuffix nocgo -v -o traefik-forward-auth_arm ./cmd
-
-    - name: Get tag name
-      run: echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-
-    - name: Get artifact details
-      uses: octokit/request-action@v2.x
-      id: get_release_details
-      with:
-        route: get /repos/${{ github.repository }}/releases/tags/${{ env.TAG }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload AMD64 release asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ fromJson(steps.get_release_details.outputs.data).upload_url }}
-        asset_path: traefik-forward-auth_amd64
-        asset_name: traefik-forward-auth_amd64
-        asset_content_type: application/octet-stream
-
-    - name: Upload ARM release asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ fromJson(steps.get_release_details.outputs.data).upload_url }}
-        asset_path: traefik-forward-auth_arm
-        asset_name: traefik-forward-auth_arm
-        asset_content_type: application/octet-stream
+      - name: Build
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/traptitech/${{ env.IMAGE_NAME }}:latest
+            ghcr.io/traptitech/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          cache-from: type=registry,ref=ghcr.io/traptitech/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=ghcr.io/traptitech/${{ env.IMAGE_NAME }}:buildcache,mode=max
