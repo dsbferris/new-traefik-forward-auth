@@ -43,7 +43,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/traptitech/${{ env.IMAGE_NAME }}:latest
-            ghcr.io/traptitech/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-          cache-from: type=registry,ref=ghcr.io/traptitech/${{ env.IMAGE_NAME }}:buildcache
-          cache-to: type=registry,ref=ghcr.io/traptitech/${{ env.IMAGE_NAME }}:buildcache,mode=max
+            ghcr.io/jhbruhn/${{ env.IMAGE_NAME }}:latest
+            ghcr.io/jhbruhn/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          cache-from: type=registry,ref=ghcr.io/jhbruhn/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=ghcr.io/jhbruhn/${{ env.IMAGE_NAME }}:buildcache,mode=max
