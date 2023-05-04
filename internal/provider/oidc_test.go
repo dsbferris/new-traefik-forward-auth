@@ -118,13 +118,14 @@ func TestOIDCGetUser(t *testing.T) {
 		"aud": "idtest",
 		"sub": "1",
 		"email": "example@example.com",
+		"preferred_username": "example",
 		"email_verified": true
 	}`))
 
 	// Get user
 	user, err := provider.GetUser(token, "")
 	assert.Nil(err)
-	assert.Equal("example@example.com", user)
+	assert.Equal("example", user)
 }
 
 // Utils
