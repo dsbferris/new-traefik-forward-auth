@@ -155,8 +155,13 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 			return
 		}
 		if user == nil {
-			s.authRedirect(logger, w, r, p, currentUrl(r), false)
-			return
+			if soft {
+				unauthorized(w)
+				return
+			} else {
+				s.authRedirect(logger, w, r, p, currentUrl(r), false)
+				return
+			}
 		}
 
 		// Validate user
