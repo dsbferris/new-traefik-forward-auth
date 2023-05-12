@@ -40,7 +40,7 @@ type Config struct {
 	MatchWhitelistOrDomain bool                 `long:"match-whitelist-or-domain" env:"MATCH_WHITELIST_OR_DOMAIN" description:"Allow users that match *either* whitelist or domain (enabled by default in v3)"`
 	Path                   string               `long:"url-path" env:"URL_PATH" default:"/_oauth" description:"Callback URL Path"`
 	SecretString           string               `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
-	SoftAuthUser           string               `long:"soft-auth-user" env:"SOFT_AUTH_USER" default:"-" description:"Username used in header if unauthorized with soft-auth action"`
+	SoftAuthUser           string               `long:"soft-auth-user" env:"SOFT_AUTH_USER" default:"" description:"If set, username used in header if unauthorized with soft-auth action"`
 	UserPath               string               `long:"user-id-path" env:"USER_ID_PATH" default:"email" description:"Dot notation path of a UserID for use with whitelist and X-Forwarded-User"`
 	Whitelist              CommaSeparatedList   `long:"whitelist" env:"WHITELIST" env-delim:"," description:"Only allow given UserID, comma separated, can be set multiple times"`
 	Port                   int                  `long:"port" env:"PORT" default:"4181" description:"Port to listen on"`

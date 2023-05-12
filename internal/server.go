@@ -118,7 +118,9 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 	var unauthorized func(w http.ResponseWriter)
 	if soft {
 		unauthorized = func(w http.ResponseWriter) {
-			w.Header().Set(config.HeaderName, config.SoftAuthUser)
+			if config.SoftAuthUser != "" {
+				w.Header().Set(config.HeaderName, config.SoftAuthUser)
+			}
 			w.WriteHeader(200)
 		}
 	} else {

@@ -178,7 +178,7 @@ Application Options:
       --match-whitelist-or-domain                           Allow users that match *either* whitelist or domain (enabled by default in v3) [$MATCH_WHITELIST_OR_DOMAIN]
       --url-path=                                           Callback URL Path (default: /_oauth) [$URL_PATH]
       --secret=                                             Secret used for signing (required) [$SECRET]
-      --soft-auth-user=                                     Username used in header if unauthorized with soft-auth action (default: -) [$SOFT_AUTH_USER]
+      --soft-auth-user=                                     If set, username used in header if unauthorized with soft-auth action [$SOFT_AUTH_USER]
       --user-id-path=                                       Dot notation path of a UserID for use with whitelist and X-Forwarded-User (default: email) [$USER_ID_PATH]
       --whitelist=                                          Only allow given UserID, comma separated, can be set multiple times [$WHITELIST]
       --port=                                               Port to listen on (default: 4181) [$PORT]

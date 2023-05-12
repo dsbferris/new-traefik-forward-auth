@@ -36,7 +36,7 @@ func TestConfigDefaults(t *testing.T) {
 	assert.Equal(time.Second*time.Duration(43200), c.Lifetime)
 	assert.False(c.MatchWhitelistOrDomain)
 	assert.Equal("/_oauth", c.Path)
-	assert.Equal("-", c.SoftAuthUser)
+	assert.Equal("", c.SoftAuthUser)
 	assert.Len(c.Whitelist, 0)
 	assert.Equal(c.Port, 4181)
 
