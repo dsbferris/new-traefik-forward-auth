@@ -173,7 +173,7 @@ Application Options:
       --default-action=[auth|soft-auth|allow]               Default action (default: auth) [$DEFAULT_ACTION]
       --default-provider=[google|oidc|generic-oauth]        Default provider (default: google) [$DEFAULT_PROVIDER]
       --domain=                                             Only allow given email domains, comma separated, can be set multiple times [$DOMAIN]
-      --header-name=                                        User header name (default: X-Forwarded-User) [$HEADER_NAME]
+      --header-names=                                       User header names, comma separated (default: X-Forwarded-User) [$HEADER_NAMES]
       --lifetime=                                           Lifetime in seconds (default: 43200) [$LIFETIME]
       --match-whitelist-or-domain                           Allow users that match *either* whitelist or domain (enabled by default in v3) [$MATCH_WHITELIST_OR_DOMAIN]
       --url-path=                                           Callback URL Path (default: /_oauth) [$URL_PATH]
@@ -183,6 +183,7 @@ Application Options:
       --whitelist=                                          Only allow given UserID, comma separated, can be set multiple times [$WHITELIST]
       --port=                                               Port to listen on (default: 4181) [$PORT]
       --rule.<name>.<param>=                                Rule definitions, param can be: "action", "rule" or "provider"
+      --header-name=                                        DEPRECATED - Use "header-names" [$HEADER_NAME]
       --cookie-domains=                                     DEPRECATED - Use "cookie-domain" [$COOKIE_DOMAINS]
       --cookie-secret=                                      DEPRECATED - Use "secret" [$COOKIE_SECRET]
       --cookie-secure=                                      DEPRECATED - Use "insecure-cookie" [$COOKIE_SECURE]

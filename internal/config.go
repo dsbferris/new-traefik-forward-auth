@@ -35,7 +35,7 @@ type Config struct {
 	DefaultAction          string               `long:"default-action" env:"DEFAULT_ACTION" default:"auth" choice:"auth" choice:"soft-auth" choice:"allow" description:"Default action"`
 	DefaultProvider        string               `long:"default-provider" env:"DEFAULT_PROVIDER" default:"google" choice:"google" choice:"oidc" choice:"generic-oauth" description:"Default provider"`
 	Domains                CommaSeparatedList   `long:"domain" env:"DOMAIN" env-delim:"," description:"Only allow given email domains, comma separated, can be set multiple times"`
-	HeaderName             string               `long:"header-name" env:"HEADER_NAME" default:"X-Forwarded-User" description:"User header name"`
+	HeaderNames            CommaSeparatedList   `long:"header-names" env:"HEADER_NAMES" default:"X-Forwarded-User" description:"User header names, comma separated"`
 	LifetimeString         int                  `long:"lifetime" env:"LIFETIME" default:"43200" description:"Lifetime in seconds"`
 	MatchWhitelistOrDomain bool                 `long:"match-whitelist-or-domain" env:"MATCH_WHITELIST_OR_DOMAIN" description:"Allow users that match *either* whitelist or domain (enabled by default in v3)"`
 	Path                   string               `long:"url-path" env:"URL_PATH" default:"/_oauth" description:"Callback URL Path"`
@@ -53,6 +53,7 @@ type Config struct {
 	Lifetime time.Duration
 
 	// Legacy
+	HeaderName          string        `long:"header-name" env:"HEADER_NAME" default:"" description:"DEPRECATED - Use \"header-names\""`
 	CookieDomainsLegacy CookieDomains `long:"cookie-domains" env:"COOKIE_DOMAINS" description:"DEPRECATED - Use \"cookie-domain\""`
 	CookieSecretLegacy  string        `long:"cookie-secret" env:"COOKIE_SECRET" description:"DEPRECATED - Use \"secret\""  json:"-"`
 	CookieSecureLegacy  string        `long:"cookie-secure" env:"COOKIE_SECURE" description:"DEPRECATED - Use \"insecure-cookie\""`
@@ -103,6 +104,9 @@ func NewConfig(args []string) (*Config, error) {
 	}
 
 	// Backwards compatability
+	if c.HeaderName != "" {
+		c.HeaderNames = append(c.HeaderNames, c.HeaderName)
+	}
 	if c.CookieSecretLegacy != "" && c.SecretString == "" {
 		fmt.Println("cookie-secret config option is deprecated, please use secret")
 		c.SecretString = c.CookieSecretLegacy
@@ -296,8 +300,8 @@ func (c *Config) Validate() {
 		log.Fatal("\"secret\" option must be set")
 	}
 
-	if len(c.HeaderName) == 0 {
-		log.Fatal("\"header-name\" option must be set")
+	if len(c.HeaderNames) == 0 {
+		log.Fatal("\"header-names\" option must be set")
 	}
 
 	// Setup default provider

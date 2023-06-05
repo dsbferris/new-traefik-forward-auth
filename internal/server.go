@@ -119,7 +119,9 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 	if soft {
 		unauthorized = func(w http.ResponseWriter) {
 			if config.SoftAuthUser != "" {
-				w.Header().Set(config.HeaderName, config.SoftAuthUser)
+				for _, headerName := range config.HeaderNames {
+					w.Header().Set(headerName, config.SoftAuthUser)
+				}
 			}
 			w.WriteHeader(200)
 		}
@@ -174,7 +176,9 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 
 		// Valid request
 		logger.Debug("Allowing valid request")
-		w.Header().Set(config.HeaderName, *user)
+		for _, headerName := range config.HeaderNames {
+			w.Header().Set(headerName, *user)
+		}
 		w.WriteHeader(200)
 	}
 }

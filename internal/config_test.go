@@ -32,7 +32,7 @@ func TestConfigDefaults(t *testing.T) {
 	assert.Equal("auth", c.DefaultAction)
 	assert.Equal("google", c.DefaultProvider)
 	assert.Len(c.Domains, 0)
-	assert.Equal("X-Forwarded-User", c.HeaderName)
+	assert.Equal(CommaSeparatedList{"X-Forwarded-User"}, c.HeaderNames)
 	assert.Equal(time.Second*time.Duration(43200), c.Lifetime)
 	assert.False(c.MatchWhitelistOrDomain)
 	assert.Equal("/_oauth", c.Path)
