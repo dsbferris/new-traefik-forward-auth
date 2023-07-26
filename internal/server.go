@@ -53,6 +53,11 @@ func (s *Server) buildRoutes() {
 	s.muxer.Handle(config.Path+"/login", s.LoginHandler("default"))
 	s.muxer.Handle(config.Path+"/logout", s.LogoutHandler())
 
+	// Add health check handler
+	s.muxer.Handle("/healthz", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.WriteHeader(http.StatusOK)
+	}))
+
 	// Add a default handler
 	s.muxer.NewRoute().Handler(s.Handler(config.DefaultAction, config.DefaultProvider, "default"))
 }
