@@ -28,9 +28,22 @@ var (
 	ErrInvalidSignature = errors.New("invalid mac signature")
 )
 
+func checkProbeToken(cookie string) (user string, ok bool) {
+	for _, probeToken := range config.ProbeToken {
+		if cookie == probeToken {
+			return config.ProbeTokenUser, true
+		}
+	}
+	return "", false
+}
+
 // ValidateCookie verifies that a cookie matches the expected format of:
 // Cookie = hash(secret, cookie domain, user, expires)|expires|user
 func ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
+	if user, ok := checkProbeToken(c.Value); ok {
+		return user, nil
+	}
+
 	parts := strings.Split(c.Value, "|")
 
 	if len(parts) != 3 {
