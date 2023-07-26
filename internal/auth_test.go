@@ -44,7 +44,7 @@ func TestAuthValidateCookie(t *testing.T) {
 	c.Value = "MQ==|2|3"
 	_, err = ValidateCookie(r, c)
 	if assert.Error(err) {
-		assert.Equal("Invalid cookie mac", err.Error())
+		assert.Equal(ErrInvalidSignature, err)
 	}
 
 	// Should catch expired

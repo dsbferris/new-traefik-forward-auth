@@ -18,7 +18,15 @@ import (
 
 // Request Validation
 
-var ErrCookieExpired = errors.New("Cookie has expired")
+var (
+	ErrCookieExpired = errors.New("Cookie has expired")
+	// ErrInvalidSignature signifies one of:
+	// 1. mac signature was badly computed
+	// 2. mac signature was modified
+	// 3. signature format was changed between versions
+	// 4. secret was rotated
+	ErrInvalidSignature = errors.New("invalid mac signature")
+)
 
 // ValidateCookie verifies that a cookie matches the expected format of:
 // Cookie = hash(secret, cookie domain, user, expires)|expires|user
@@ -42,7 +50,7 @@ func ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
 
 	// Valid token?
 	if !hmac.Equal(mac, expected) {
-		return "", errors.New("Invalid cookie mac")
+		return "", ErrInvalidSignature
 	}
 
 	expires, err := strconv.ParseInt(parts[1], 10, 64)

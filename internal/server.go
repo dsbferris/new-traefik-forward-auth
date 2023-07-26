@@ -107,6 +107,9 @@ func GetUserFromCookie(r *http.Request) (*string, error) {
 		if err == ErrCookieExpired {
 			return nil, nil
 		}
+		if err == ErrInvalidSignature {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("invalid cookie: %w", err)
 	}
 	return &user, nil
