@@ -182,6 +182,8 @@ Application Options:
       --user-id-path=                                       Dot notation path of a UserID for use with whitelist and X-Forwarded-User (default: email) [$USER_ID_PATH]
       --whitelist=                                          Only allow given UserID, comma separated, can be set multiple times [$WHITELIST]
       --port=                                               Port to listen on (default: 4181) [$PORT]
+      --probe-token=                                        Static probe token which is always passed [$PROBE_TOKEN]
+      --probe-token-user=                                   User authenticated with static probe token (default: probe) [$PROBE_TOKEN_USER]
       --rule.<name>.<param>=                                Rule definitions, param can be: "action", "rule" or "provider"
       --header-name=                                        DEPRECATED - Use "header-names" [$HEADER_NAME]
       --cookie-domains=                                     DEPRECATED - Use "cookie-domain" [$COOKIE_DOMAINS]
