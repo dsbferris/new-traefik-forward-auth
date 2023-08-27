@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/traPtitech/traefik-forward-auth/internal/provider"
 )
@@ -252,6 +253,45 @@ func TestAuthValidateUser(t *testing.T) {
 	assert.True(v, "should allow user from allowed domain")
 	v = ValidateUser("test@testrule.com", "test")
 	assert.True(v, "should allow user in whitelist")
+}
+
+func TestGetRedirectURI(t *testing.T) {
+	cases := []struct {
+		name    string
+		path    string
+		headers map[string]string
+		want    string
+	}{
+		{
+			name: "no redirect param",
+			path: "/",
+			want: "/",
+		},
+		{
+			name: "has redirect param",
+			path: "/?redirect=/foo",
+			want: "/foo",
+		},
+		{
+			name: "has redirect param from forwarded uri header",
+			path: "/",
+			headers: map[string]string{
+				"X-Forwarded-Uri": "/?redirect=/bar",
+			},
+			want: "/bar",
+		},
+	}
+	for _, cc := range cases {
+		t.Run(cc.name, func(t *testing.T) {
+			req, err := http.NewRequest("GET", cc.path, nil)
+			require.NoError(t, err)
+			for k, v := range cc.headers {
+				req.Header.Add(k, v)
+			}
+			got := GetRedirectURI(req)
+			assert.Equal(t, cc.want, got)
+		})
+	}
 }
 
 func TestAuthValidateRedirect(t *testing.T) {

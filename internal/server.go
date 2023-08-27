@@ -143,6 +143,8 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 		}
 	}
 
+	forceLogin := s.LoginHandler(providerName)
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Logging setup
 		logger := s.logger(r, "Auth", rule, "Authenticating request")
@@ -170,6 +172,11 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 		}
 		if user == nil {
 			if soft {
+				isForceLogin := strings.HasPrefix(r.Header.Get("X-Forwarded-Uri"), config.Path+"/login")
+				if isForceLogin {
+					forceLogin(w, r)
+					return
+				}
 				unauthorized(w)
 				return
 			} else {
@@ -311,10 +318,7 @@ func (s *Server) LoginHandler(providerName string) http.HandlerFunc {
 		logger.Info("Explicit user login")
 
 		// Calculate and validate redirect
-		redirect := r.URL.Query().Get("redirect")
-		if redirect == "" {
-			redirect = "/"
-		}
+		redirect := GetRedirectURI(r)
 		redirectURL, err := ValidateLoginRedirect(r, redirect)
 		if err != nil {
 			logger.WithFields(logrus.Fields{

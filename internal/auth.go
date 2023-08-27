@@ -146,6 +146,24 @@ func ValidateDomains(user string, domains CommaSeparatedList) bool {
 	return false
 }
 
+func GetRedirectURI(r *http.Request) string {
+	redirect := r.URL.Query().Get("redirect")
+	if redirect != "" {
+		return redirect
+	}
+	forwardedURI := r.Header.Get("X-Forwarded-Uri")
+	if forwardedURI != "" {
+		u, err := url.ParseRequestURI(forwardedURI)
+		if err == nil {
+			redirect = u.Query().Get("redirect")
+			if redirect != "" {
+				return redirect
+			}
+		}
+	}
+	return "/"
+}
+
 func ValidateLoginRedirect(r *http.Request, redirect string) (*url.URL, error) {
 	u, err := url.ParseRequestURI(redirect)
 	if err != nil {
