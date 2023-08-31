@@ -163,6 +163,15 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 			}
 		}
 
+		// Explicit login route (config.Path+"/login") on soft-auth
+		if soft {
+			isForceLogin := strings.HasPrefix(r.Header.Get("X-Forwarded-Uri"), config.Path+"/login")
+			if isForceLogin {
+				forceLogin(w, r)
+				return
+			}
+		}
+
 		// Get user from cookie
 		user, err := GetUserFromCookie(r)
 		if err != nil {
@@ -172,11 +181,6 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 		}
 		if user == nil {
 			if soft {
-				isForceLogin := strings.HasPrefix(r.Header.Get("X-Forwarded-Uri"), config.Path+"/login")
-				if isForceLogin {
-					forceLogin(w, r)
-					return
-				}
 				unauthorized(w)
 				return
 			} else {
