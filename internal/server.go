@@ -50,7 +50,7 @@ func (s *Server) buildRoutes() {
 	s.muxer.Handle(config.Path, s.AuthCallbackHandler())
 
 	// Add login / logout handler
-	s.muxer.Handle(config.Path+"/login", s.LoginHandler("default"))
+	s.muxer.Handle(config.Path+"/login", s.LoginHandler(config.DefaultProvider))
 	s.muxer.Handle(config.Path+"/logout", s.LogoutHandler())
 
 	// Add health check handler
