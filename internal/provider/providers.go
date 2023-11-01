@@ -30,11 +30,6 @@ type token struct {
 	Token string `json:"access_token"`
 }
 
-// User is the authenticated user
-type User struct {
-	Email string `json:"email"`
-}
-
 // GetUser extracts a UserID located at the (dot notation) path (UserPath) in the json io.Reader of the UserURL
 func GetUser(r io.Reader, UserPath string) (string, error) {
 	json, err := gabs.ParseJSONBuffer(r)
