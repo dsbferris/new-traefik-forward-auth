@@ -169,11 +169,18 @@ func ValidateLoginRedirect(r *http.Request, redirect string) (*url.URL, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid path: %w", err)
 	}
-	if u.EscapedPath() != redirect {
-		return nil, errors.New("invalid path: either not escaped or contains non-path elements")
+
+	requestScheme := r.Header.Get("X-Forwarded-Proto")
+	requestHost := r.Header.Get("X-Forwarded-Host")
+	if u.Scheme != "" && u.Scheme != requestScheme {
+		return nil, fmt.Errorf("invalid redirect: scheme mismatch")
 	}
-	u.Scheme = r.Header.Get("X-Forwarded-Proto")
-	u.Host = r.Header.Get("X-Forwarded-Host")
+	if u.Host != "" && u.Host != requestHost {
+		return nil, fmt.Errorf("invalid redirect: host mismatch")
+	}
+
+	u.Scheme = requestScheme
+	u.Host = requestHost
 	return u, nil
 }
 
