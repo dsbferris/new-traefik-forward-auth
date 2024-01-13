@@ -45,7 +45,9 @@ func TestGenericOAuthGetLoginURL(t *testing.T) {
 		UserURL:      "https://provider.com/oauth2/user",
 		ClientID:     "idtest",
 		ClientSecret: "secret",
-		Scopes:       []string{"scopetest"},
+		OAuthProvider: OAuthProvider{
+			Scopes: []string{"scopetest"},
+		},
 	}
 	err := p.Setup()
 	if err != nil {
