@@ -45,8 +45,9 @@ func GetUser(r io.Reader, UserPath string) (string, error) {
 
 // OAuthProvider is a provider using the oauth2 library
 type OAuthProvider struct {
-	Prompt   string `long:"prompt" env:"PROMPT" description:"Optional prompt query"`
-	Resource string `long:"resource" env:"RESOURCE" description:"Optional resource indicator"`
+	Scopes   []string `long:"scope" env:"SCOPE" env-delim:"," default:"profile" default:"email" description:"Scopes"`
+	Prompt   string   `long:"prompt" env:"PROMPT" description:"Optional prompt query"`
+	Resource string   `long:"resource" env:"RESOURCE" description:"Optional resource indicator"`
 
 	Config *oauth2.Config
 	ctx    context.Context
