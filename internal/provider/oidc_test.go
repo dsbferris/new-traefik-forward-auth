@@ -157,6 +157,9 @@ func setupOIDCTest(t *testing.T, bodyValues map[string]map[string]string) (*OIDC
 		ClientID:     "idtest",
 		ClientSecret: "sectest",
 		IssuerURL:    serverURL.String(),
+		OAuthProvider: OAuthProvider{
+			Scopes: []string{"profile", "email"},
+		},
 	}
 
 	// Initialise config/verifier
