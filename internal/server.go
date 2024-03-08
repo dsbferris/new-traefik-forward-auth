@@ -383,7 +383,7 @@ func (s *Server) LogoutHandler() http.HandlerFunc {
 
 func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *http.Request, p provider.Provider, returnUrl string, forcePrompt bool) {
 	// Error indicates no cookie, generate nonce
-	err, nonce := Nonce()
+	nonce, err := Nonce()
 	if err != nil {
 		logger.WithField("error", err).Error("Error generating nonce")
 		http.Error(w, "Service unavailable", 503)

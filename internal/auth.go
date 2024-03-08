@@ -376,14 +376,14 @@ func ValidateState(state string) error {
 }
 
 // Nonce generates a random nonce
-func Nonce() (error, string) {
+func Nonce() (string, error) {
 	nonce := make([]byte, 16)
 	_, err := rand.Read(nonce)
 	if err != nil {
-		return err, ""
+		return "", err
 	}
 
-	return nil, fmt.Sprintf("%x", nonce)
+	return fmt.Sprintf("%x", nonce), nil
 }
 
 // Cookie domain
