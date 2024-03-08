@@ -3,6 +3,17 @@
 
 A minimal forward authentication service that provides OAuth/SSO login and authentication for the [traefik](https://github.com/containous/traefik) reverse proxy/load balancer.
 
+## Fork of fork of fork notes
+This is yet another fork  
+of [traPtitech/traefik-forward-auth](https://github.com/traPtitech/traefik-forward-auth)  
+merged with [jhbruhn/traefik-forward-auth](https://github.com/jhbruhn/traefik-forward-auth)  
+of [jordemort/traefik-forward-auth](https://github.com/jordemort/traefik-forward-auth)  
+of [thomseddon/traefik-forward-auth](https://github.com/thomseddon/traefik-forward-auth).
+
+Updated to GO 1.22.1 as well as all dependencies.
+Although I did not dear to try out the traefik v3 package as some things break there.
+
+
 ## Fork notes
 
 This is yet another fork of [thomseddon/traefik-forward-auth](https://github.com/thomseddon/traefik-forward-auth).
