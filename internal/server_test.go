@@ -571,7 +571,7 @@ func doHttpRequest(r *http.Request, c *http.Cookie) (*http.Response, string) {
 	}
 
 	// Copy into request
-	for _, c := range w.HeaderMap["Set-Cookie"] {
+	for _, c := range w.Header()["Set-Cookie"] {
 		r.Header.Add("Cookie", c)
 	}
 
