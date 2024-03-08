@@ -199,6 +199,7 @@ func TestAuthValidateUser(t *testing.T) {
 	// Should allow comma separated email
 	config.Whitelist = []string{"test@test.com", "test2@test2.com"}
 	v = ValidateUser("test2@test2.com", "default")
+	assert.True(v, "should allow user from whitelist")
 
 	// Should allow matching whitelist in rule
 	config.Domains = []string{}
