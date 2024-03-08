@@ -18,14 +18,30 @@ import (
 
 // Request Validation
 
-var (
-	ErrCookieExpired = errors.New("Cookie has expired")
-	// ErrInvalidSignature signifies one of:
+const (
+	StrInvalidFormat       = "invalid cookie format"
+	StrUnableToDecodeMac   = "unable to decode cookie mac"
+	StrUnableToGenerateMac = "unable to generate mac"
+	// InvalidSignature signifies one of:
 	// 1. mac signature was badly computed
 	// 2. mac signature was modified
 	// 3. signature format was changed between versions
 	// 4. secret was rotated
-	ErrInvalidSignature = errors.New("invalid mac signature")
+	StrInvalidSignature    = "invalid mac signature"
+	StrUnableToParseExpiry = "unable to parse cookie expiry"
+	StrCookieExpired       = "cookie has expired"
+
+	StrInvalidRedirectSchemeMismatch    = "invalid redirect: scheme mismatch"
+	StrInvalidRedirectHostMismatch      = "invalid redirect: host mismatch"
+	StrUnableToParseRedirect            = "unable to parse redirect"
+	StrInvalidRedirectUrlScheme         = "invalid redirect URL scheme"
+	StrRedirectHostDoesNotMatchExpected = "redirect host does not match any expected hosts (should match cookie domain when using auth host)"
+	StrRedirectHostDoesNotMatchRequest  = "redirect host does not match request host (must match when not using auth host)"
+
+	StrInvalidCsrfCookieValue      = "invalid CSRF cookie value"
+	StrCsrfCookieDoesNotMatchState = "state of CSRF cookie does not match"
+	StrInvalidCsrfStateFormat      = "invalid CSRF state format"
+	StrInvalidCsrfStateValue       = "invalid CSRF state value"
 )
 
 func checkProbeToken(cookie string) (user string, ok bool) {
@@ -47,33 +63,33 @@ func ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
 	parts := strings.Split(c.Value, "|")
 
 	if len(parts) != 3 {
-		return "", errors.New("Invalid cookie format")
+		return "", errors.New(StrInvalidFormat)
 	}
 
 	mac, err := base64.URLEncoding.DecodeString(parts[0])
 	if err != nil {
-		return "", errors.New("Unable to decode cookie mac")
+		return "", errors.New(StrUnableToDecodeMac)
 	}
 
 	expectedSignature := cookieSignature(r, parts[2], parts[1])
 	expected, err := base64.URLEncoding.DecodeString(expectedSignature)
 	if err != nil {
-		return "", errors.New("Unable to generate mac")
+		return "", errors.New(StrUnableToGenerateMac)
 	}
 
 	// Valid token?
 	if !hmac.Equal(mac, expected) {
-		return "", ErrInvalidSignature
+		return "", errors.New(StrInvalidSignature)
 	}
 
 	expires, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
-		return "", errors.New("Unable to parse cookie expiry")
+		return "", errors.New(StrUnableToParseExpiry)
 	}
 
 	// Has it expired?
 	if time.Unix(expires, 0).Before(time.Now()) {
-		return "", ErrCookieExpired
+		return "", errors.New(StrCookieExpired)
 	}
 
 	// Looks valid
@@ -173,10 +189,10 @@ func ValidateLoginRedirect(r *http.Request, redirect string) (*url.URL, error) {
 	requestScheme := r.Header.Get("X-Forwarded-Proto")
 	requestHost := r.Header.Get("X-Forwarded-Host")
 	if u.Scheme != "" && u.Scheme != requestScheme {
-		return nil, fmt.Errorf("invalid redirect: scheme mismatch")
+		return nil, fmt.Errorf(StrInvalidRedirectSchemeMismatch)
 	}
 	if u.Host != "" && u.Host != requestHost {
-		return nil, fmt.Errorf("invalid redirect: host mismatch")
+		return nil, fmt.Errorf(StrInvalidRedirectHostMismatch)
 	}
 
 	u.Scheme = requestScheme
@@ -190,11 +206,11 @@ func ValidateRedirect(r *http.Request, redirect string) (*url.URL, error) {
 	redirectURL, err := url.Parse(redirect)
 
 	if err != nil {
-		return nil, errors.New("Unable to parse redirect")
+		return nil, errors.New(StrUnableToParseRedirect)
 	}
 
 	if redirectURL.Scheme != "http" && redirectURL.Scheme != "https" {
-		return nil, errors.New("Invalid redirect URL scheme")
+		return nil, errors.New(StrInvalidRedirectUrlScheme)
 	}
 
 	// If we're using an auth domain?
@@ -202,12 +218,12 @@ func ValidateRedirect(r *http.Request, redirect string) (*url.URL, error) {
 		// If we are using an auth domain, they redirect must share a common
 		// suffix with the requested redirect
 		if !strings.HasSuffix(redirectURL.Host, base) {
-			return nil, errors.New("Redirect host does not match any expected hosts (should match cookie domain when using auth host)")
+			return nil, errors.New(StrRedirectHostDoesNotMatchExpected)
 		}
 	} else {
 		// If not, we should only ever redirect to the same domain
 		if redirectURL.Host != r.Header.Get("X-Forwarded-Host") {
-			return nil, errors.New("Redirect host does not match request host (must match when not using auth host)")
+			return nil, errors.New(StrRedirectHostDoesNotMatchRequest)
 		}
 	}
 
@@ -327,19 +343,19 @@ func FindCSRFCookie(r *http.Request, state string) (c *http.Cookie, err error) {
 // ValidateCSRFCookie validates the csrf cookie against state
 func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider string, redirect string, err error) {
 	if len(c.Value) != 32 {
-		return false, "", "", errors.New("Invalid CSRF cookie value")
+		return false, "", "", errors.New(StrInvalidCsrfCookieValue)
 	}
 
 	// Check nonce match
 	if c.Value != state[:32] {
-		return false, "", "", errors.New("CSRF cookie does not match state")
+		return false, "", "", errors.New(StrCsrfCookieDoesNotMatchState)
 	}
 
 	// Extract provider
 	params := state[33:]
 	split := strings.Index(params, ":")
 	if split == -1 {
-		return false, "", "", errors.New("Invalid CSRF state format")
+		return false, "", "", errors.New(StrInvalidCsrfStateFormat)
 	}
 
 	// Valid, return provider and redirect
@@ -354,7 +370,7 @@ func MakeState(returnUrl string, p provider.Provider, nonce string) string {
 // ValidateState checks whether the state is of right length.
 func ValidateState(state string) error {
 	if len(state) < 34 {
-		return errors.New("Invalid CSRF state value")
+		return errors.New(StrInvalidCsrfStateValue)
 	}
 	return nil
 }

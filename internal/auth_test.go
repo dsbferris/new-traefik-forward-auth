@@ -27,7 +27,7 @@ func TestAuthValidateCookie(t *testing.T) {
 
 		_, err := ValidateCookie(r, &http.Cookie{Value: ""})
 		if assert.Error(err) {
-			assert.Equal("Invalid cookie format", err.Error())
+			assert.Equal(StrInvalidFormat, err.Error())
 		}
 	})
 
@@ -50,17 +50,17 @@ func TestAuthValidateCookie(t *testing.T) {
 		c.Value = ""
 		_, err := ValidateCookie(r, c)
 		if assert.Error(err) {
-			assert.Equal("Invalid cookie format", err.Error())
+			assert.Equal(StrInvalidFormat, err.Error())
 		}
 		c.Value = "1|2"
 		_, err = ValidateCookie(r, c)
 		if assert.Error(err) {
-			assert.Equal("Invalid cookie format", err.Error())
+			assert.Equal(StrInvalidFormat, err.Error())
 		}
 		c.Value = "1|2|3|4"
 		_, err = ValidateCookie(r, c)
 		if assert.Error(err) {
-			assert.Equal("Invalid cookie format", err.Error())
+			assert.Equal(StrInvalidFormat, err.Error())
 		}
 	})
 
@@ -72,7 +72,7 @@ func TestAuthValidateCookie(t *testing.T) {
 		c.Value = "MQ==|2|3"
 		_, err := ValidateCookie(r, c)
 		if assert.Error(err) {
-			assert.Equal(ErrInvalidSignature, err)
+			assert.Equal(StrInvalidSignature, err.Error())
 		}
 	})
 
@@ -85,7 +85,7 @@ func TestAuthValidateCookie(t *testing.T) {
 		c = MakeCookie(r, "test@test.com")
 		_, err := ValidateCookie(r, c)
 		if assert.Error(err) {
-			assert.Equal("Cookie has expired", err.Error())
+			assert.Equal(StrCookieExpired, err.Error())
 		}
 	})
 
@@ -311,7 +311,7 @@ func TestAuthValidateRedirect(t *testing.T) {
 		return r
 	}
 
-	errStr := "Redirect host does not match request host (must match when not using auth host)"
+	errStr := StrRedirectHostDoesNotMatchRequest
 
 	_, err := ValidateRedirect(
 		newRedirectRequest("http://app.example.com/_oauth?state=123"),
@@ -348,7 +348,7 @@ func TestAuthValidateRedirect(t *testing.T) {
 	//
 	config.AuthHost = "auth.example.com"
 	config.CookieDomains = []CookieDomain{*NewCookieDomain("example.com")}
-	errStr = "Redirect host does not match any expected hosts (should match cookie domain when using auth host)"
+	errStr = StrRedirectHostDoesNotMatchExpected
 
 	_, err = ValidateRedirect(
 		newRedirectRequest("http://app.example.com/_oauth?state=123"),
@@ -520,13 +520,13 @@ func TestAuthValidateCSRFCookie(t *testing.T) {
 	valid, _, _, err := ValidateCSRFCookie(c, state)
 	assert.False(valid)
 	if assert.Error(err) {
-		assert.Equal("Invalid CSRF cookie value", err.Error())
+		assert.Equal(StrInvalidCsrfCookieValue, err.Error())
 	}
 	c.Value = "123456789012345678901234567890123"
 	valid, _, _, err = ValidateCSRFCookie(c, state)
 	assert.False(valid)
 	if assert.Error(err) {
-		assert.Equal("Invalid CSRF cookie value", err.Error())
+		assert.Equal(StrInvalidCsrfCookieValue, err.Error())
 	}
 
 	// Should require provider
@@ -535,7 +535,7 @@ func TestAuthValidateCSRFCookie(t *testing.T) {
 	valid, _, _, err = ValidateCSRFCookie(c, state)
 	assert.False(valid)
 	if assert.Error(err) {
-		assert.Equal("Invalid CSRF state format", err.Error())
+		assert.Equal(StrInvalidCsrfStateFormat, err.Error())
 	}
 
 	// Should allow valid state
@@ -555,7 +555,7 @@ func TestValidateState(t *testing.T) {
 	state := "12345678901234567890123456789012:"
 	err := ValidateState(state)
 	if assert.Error(err) {
-		assert.Equal("Invalid CSRF state value", err.Error())
+		assert.Equal(StrInvalidCsrfStateValue, err.Error())
 	}
 	// Should pass this state
 	state = "12345678901234567890123456789012:p99:url123"
