@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+
 	// "net/url"
 
 	"github.com/Jeffail/gabs/v2"
@@ -28,6 +29,12 @@ type Provider interface {
 
 type token struct {
 	Token string `json:"access_token"`
+}
+
+// User is the authenticated user
+type User struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
 }
 
 // GetUser extracts a UserID located at the (dot notation) path (UserPath) in the json io.Reader of the UserURL
