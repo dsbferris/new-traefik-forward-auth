@@ -109,10 +109,10 @@ func GetUserFromCookie(r *http.Request) (*string, error) {
 	// Validate cookie
 	user, err := ValidateCookie(r, c)
 	if err != nil {
-		if err == ErrCookieExpired {
+		if err.Error() == StrCookieExpired {
 			return nil, nil
 		}
-		if err == ErrInvalidSignature {
+		if err.Error() == StrInvalidSignature {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("invalid cookie: %w", err)
@@ -383,7 +383,7 @@ func (s *Server) LogoutHandler() http.HandlerFunc {
 
 func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *http.Request, p provider.Provider, returnUrl string, forcePrompt bool) {
 	// Error indicates no cookie, generate nonce
-	err, nonce := Nonce()
+	nonce, err := Nonce()
 	if err != nil {
 		logger.WithField("error", err).Error("Error generating nonce")
 		http.Error(w, "Service unavailable", 503)
