@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"regexp"
@@ -287,7 +286,7 @@ func handleFlagError(err error) error {
 var legacyFileFormat = regexp.MustCompile(`(?m)^([a-z-]+) (.*)$`)
 
 func convertLegacyToIni(name string) (io.Reader, error) {
-	b, err := ioutil.ReadFile(name)
+	b, err := os.ReadFile(name)
 	if err != nil {
 		return nil, err
 	}

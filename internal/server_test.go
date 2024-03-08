@@ -2,7 +2,7 @@ package tfa
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -578,7 +578,7 @@ func doHttpRequest(r *http.Request, c *http.Cookie) (*http.Response, string) {
 	NewServer().RootHandler(w, r)
 
 	res := w.Result()
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := io.ReadAll(res.Body)
 
 	// if res.StatusCode > 300 && res.StatusCode < 400 {
 	// 	fmt.Printf("%#v", res.Header)
