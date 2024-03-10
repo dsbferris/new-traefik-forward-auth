@@ -25,8 +25,8 @@ func NewServer() *Server {
 }
 
 func escapeNewlines(data string) string {
-	escapedData := strings.Replace(data, "\n", "", -1)
-	escapedData = strings.Replace(escapedData, "\r", "", -1)
+	escapedData := strings.ReplaceAll(data, "\n", "")
+	escapedData = strings.ReplaceAll(escapedData, "\r", "")
 	return escapedData
 }
 
