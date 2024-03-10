@@ -8,9 +8,9 @@ import (
 )
 
 func main() {
+	config := internal.NewGlobalConfig()
 	log := internal.NewDefaultLogger()
 
-	config := internal.NewGlobalConfig()
 	config.Validate()
 
 	server := internal.NewServer()
