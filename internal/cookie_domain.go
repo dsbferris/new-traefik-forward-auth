@@ -49,6 +49,7 @@ func (c *CookieDomain) MarshalFlag() (string, error) {
 	return c.Domain, nil
 }
 
+// TODO can I yeet this, as it is legacy?
 // CookieDomains provides legacy sypport for comma separated list of cookie domains
 type CookieDomains []CookieDomain
 
