@@ -154,17 +154,6 @@ func TestConfigParseIni(t *testing.T) {
 	}, c.Rules)
 }
 
-func TestConfigFileBackwardsCompatability(t *testing.T) {
-	assert := assert.New(t)
-	c, err := NewConfig([]string{
-		"--config=../test/config-legacy",
-	})
-	require.Nil(t, err)
-
-	assert.Equal("/two", c.Path, "variable in legacy config file should be read")
-	assert.Equal("auth.legacy.com", c.AuthHost, "variable in legacy config file should be read")
-}
-
 func TestConfigParseEnvironment(t *testing.T) {
 	assert := assert.New(t)
 	os.Setenv("COOKIE_NAME", "env_cookie_name")

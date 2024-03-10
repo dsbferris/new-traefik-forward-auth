@@ -1,14 +1,11 @@
 package tfa
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -144,21 +141,7 @@ func (c *Config) parseFlags(args []string) error {
 	i := flags.NewIniParser(p)
 	c.Config = func(s string) error {
 		// Try parsing at as an ini
-		err := i.ParseFile(s)
-
-		// If it fails with a syntax error, try converting legacy to ini
-		if err != nil && strings.Contains(err.Error(), "malformed key=value") {
-			converted, convertErr := convertLegacyToIni(s)
-			if convertErr != nil {
-				// If conversion fails, return the original error
-				return err
-			}
-
-			fmt.Println("config format deprecated, please use ini format")
-			return i.Parse(converted)
-		}
-
-		return err
+		return i.ParseFile(s)
 	}
 
 	_, err := p.ParseArgs(args)
@@ -241,17 +224,6 @@ func handleFlagError(err error) error {
 	}
 
 	return err
-}
-
-var legacyFileFormat = regexp.MustCompile(`(?m)^([a-z-]+) (.*)$`)
-
-func convertLegacyToIni(name string) (io.Reader, error) {
-	b, err := os.ReadFile(name)
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes.NewReader(legacyFileFormat.ReplaceAll(b, []byte("$1=$2"))), nil
 }
 
 // Validate validates a config object
