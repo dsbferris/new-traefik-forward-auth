@@ -1,3 +1,7 @@
 example
 .travis.yml
 .git
+.github
+.vscode
+.env
+.env*
