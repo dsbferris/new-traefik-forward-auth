@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/dsbferris/traefik-forward-auth/appconfig"
 	"github.com/dsbferris/traefik-forward-auth/provider"
 	"github.com/dsbferris/traefik-forward-auth/types"
 )
@@ -24,7 +25,7 @@ func TestAuthValidateCookie(t *testing.T) {
 
 	t.Run("should not pass empty with default", func(t *testing.T) {
 		assert := assert.New(t)
-		config, _ = NewConfig([]string{""})
+		config, _ = appconfig.NewConfig([]string{""})
 
 		_, err := ValidateCookie(r, &http.Cookie{Value: ""})
 		if assert.Error(err) {
@@ -34,7 +35,7 @@ func TestAuthValidateCookie(t *testing.T) {
 
 	t.Run("empty probe token", func(t *testing.T) {
 		assert := assert.New(t)
-		config, _ = NewConfig([]string{})
+		config, _ = appconfig.NewConfig([]string{})
 		config.ProbeToken = append(config.ProbeToken, "super-secret-token")
 		config.ProbeTokenUser = "toki"
 
@@ -45,7 +46,7 @@ func TestAuthValidateCookie(t *testing.T) {
 
 	t.Run("should require 3 parts", func(t *testing.T) {
 		assert := assert.New(t)
-		config, _ = NewConfig([]string{""})
+		config, _ = appconfig.NewConfig([]string{""})
 		c := &http.Cookie{}
 
 		c.Value = ""
@@ -67,7 +68,7 @@ func TestAuthValidateCookie(t *testing.T) {
 
 	t.Run("should catch invalid mac", func(t *testing.T) {
 		assert := assert.New(t)
-		config, _ = NewConfig([]string{""})
+		config, _ = appconfig.NewConfig([]string{""})
 		c := &http.Cookie{}
 
 		c.Value = "MQ==|2|3"
@@ -79,7 +80,7 @@ func TestAuthValidateCookie(t *testing.T) {
 
 	t.Run("should catch expired", func(t *testing.T) {
 		assert := assert.New(t)
-		config, _ = NewConfig([]string{""})
+		config, _ = appconfig.NewConfig([]string{""})
 		c := &http.Cookie{}
 
 		config.Lifetime = time.Second * time.Duration(-1)
@@ -92,7 +93,7 @@ func TestAuthValidateCookie(t *testing.T) {
 
 	t.Run("should accept valid cookie", func(t *testing.T) {
 		assert := assert.New(t)
-		config, _ = NewConfig([]string{""})
+		config, _ = appconfig.NewConfig([]string{""})
 		c := &http.Cookie{}
 
 		config.Lifetime = time.Second * time.Duration(10)
@@ -105,7 +106,7 @@ func TestAuthValidateCookie(t *testing.T) {
 
 func TestAuthValidateUser(t *testing.T) {
 	assert := assert.New(t)
-	config, _ = NewConfig([]string{})
+	config, _ = appconfig.NewConfig([]string{})
 
 	// Should allow any with no whitelist/domain is specified
 	v := ValidateUser("test@test.com", "default")
@@ -298,7 +299,7 @@ func TestGetRedirectURI(t *testing.T) {
 
 func TestAuthValidateRedirect(t *testing.T) {
 	assert := assert.New(t)
-	config, _ = NewConfig([]string{})
+	config, _ = appconfig.NewConfig([]string{})
 
 	newRedirectRequest := func(urlStr string) *http.Request {
 		u, err := url.Parse(urlStr)
@@ -395,7 +396,7 @@ func TestRedirectUri(t *testing.T) {
 	//
 	// No Auth Host
 	//
-	config, _ = NewConfig([]string{})
+	config, _ = appconfig.NewConfig([]string{})
 
 	uri, err := url.Parse(redirectUri(r))
 	assert.Nil(err)
@@ -448,7 +449,7 @@ func TestRedirectUri(t *testing.T) {
 
 func TestAuthMakeCookie(t *testing.T) {
 	assert := assert.New(t)
-	config, _ = NewConfig([]string{})
+	config, _ = appconfig.NewConfig([]string{})
 	r, _ := http.NewRequest("GET", "http://app.example.com", nil)
 	r.Header.Add("X-Forwarded-Host", "app.example.com")
 
@@ -474,7 +475,7 @@ func TestAuthMakeCookie(t *testing.T) {
 
 func TestAuthMakeCSRFCookie(t *testing.T) {
 	assert := assert.New(t)
-	config, _ = NewConfig([]string{})
+	config, _ = appconfig.NewConfig([]string{})
 	r, _ := http.NewRequest("GET", "http://app.example.com", nil)
 	r.Header.Add("X-Forwarded-Host", "app.example.com")
 
@@ -499,7 +500,7 @@ func TestAuthMakeCSRFCookie(t *testing.T) {
 
 func TestAuthClearCSRFCookie(t *testing.T) {
 	assert := assert.New(t)
-	config, _ = NewConfig([]string{})
+	config, _ = appconfig.NewConfig([]string{})
 	r, _ := http.NewRequest("GET", "http://example.com", nil)
 
 	c := ClearCSRFCookie(r, &http.Cookie{Name: "someCsrfCookie"})
@@ -511,7 +512,7 @@ func TestAuthClearCSRFCookie(t *testing.T) {
 
 func TestAuthValidateCSRFCookie(t *testing.T) {
 	assert := assert.New(t)
-	config, _ = NewConfig([]string{})
+	config, _ = appconfig.NewConfig([]string{})
 	c := &http.Cookie{}
 	state := ""
 

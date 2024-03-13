@@ -4,16 +4,18 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/dsbferris/traefik-forward-auth/appconfig"
 	internal "github.com/dsbferris/traefik-forward-auth/internal"
 	log "github.com/dsbferris/traefik-forward-auth/log"
 )
 
 func main() {
-	config := internal.NewGlobalConfig()
+	config := appconfig.NewGlobalConfig()
 	logger := log.NewDefaultLogger()
 
-	internal.ValidateConfig(config, logger)
+	appconfig.ValidateConfig(config, logger)
 
+	internal.SetConfig(config)
 	server := internal.NewServer(logger)
 
 	// Attach router to default server

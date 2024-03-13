@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dsbferris/traefik-forward-auth/appconfig"
 	"github.com/dsbferris/traefik-forward-auth/log"
 	"github.com/dsbferris/traefik-forward-auth/types"
 	"github.com/sirupsen/logrus"
@@ -595,8 +596,8 @@ func doHttpRequest(r *http.Request, c *http.Cookie, log *logrus.Logger) (*http.R
 	return res, string(body)
 }
 
-func newDefaultConfig() *Config {
-	config, _ = NewConfig([]string{
+func newDefaultConfig() *appconfig.Config {
+	config, _ = appconfig.NewConfig([]string{
 		"--providers.google.client-id=id",
 		"--providers.google.client-secret=secret",
 		"--trusted-ip-address=127.0.0.2",

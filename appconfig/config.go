@@ -1,4 +1,4 @@
-package tfa
+package appconfig
 
 import (
 	"encoding/json"
@@ -19,13 +19,13 @@ import (
 
 var config *Config
 
-// Config holds the runtime application config
+// Config holds the runtime application appconfig
 type Config struct {
 	LogLevel  string `long:"log-level" env:"LOG_LEVEL" default:"warn" choice:"trace" choice:"debug" choice:"info" choice:"warn" choice:"error" choice:"fatal" choice:"panic" description:"Log level"`
 	LogFormat string `long:"log-format"  env:"LOG_FORMAT" default:"text" choice:"text" choice:"json" choice:"pretty" description:"Log format"`
 
 	AuthHost               string                   `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
-	Config                 func(s string) error     `long:"config" env:"CONFIG" description:"Path to config file" json:"-"`
+	Config                 func(s string) error     `long:"appconfig" env:"CONFIG" description:"Path to appconfig file" json:"-"`
 	CookieDomains          types.CookieDomains      `long:"cookie-domain" env:"COOKIE_DOMAIN" env-delim:"," description:"Domain to set auth cookie on, can be set multiple times"`
 	InsecureCookie         bool                     `long:"insecure-cookie" env:"INSECURE_COOKIE" description:"Use insecure cookies"`
 	CookieName             string                   `long:"cookie-name" env:"COOKIE_NAME" default:"_forward_auth" description:"Cookie Name"`
@@ -56,7 +56,7 @@ type Config struct {
 	trustedIPNetworks  []*net.IPNet
 }
 
-// NewGlobalConfig creates a new global config, parsed from command arguments
+// NewGlobalConfig creates a new global appconfig, parsed from command arguments
 func NewGlobalConfig() *Config {
 	var err error
 	config, err = NewConfig(os.Args[1:])
@@ -68,9 +68,9 @@ func NewGlobalConfig() *Config {
 	return config
 }
 
-// TODO: move config parsing into new func "NewParsedConfig"
+// TODO: move appconfig parsing into new func "NewParsedConfig"
 
-// NewConfig parses and validates provided configuration into a config object
+// NewConfig parses and validates provided configuration into a appconfig object
 func NewConfig(args []string) (*Config, error) {
 	c := &Config{
 		Rules: map[string]*types.Rule{},
@@ -228,7 +228,7 @@ func handleFlagError(err error) error {
 	return err
 }
 
-// Validate validates a config object
+// Validate validates a appconfig object
 func ValidateConfig(c *Config, log *logrus.Logger) {
 	// Check for show stopper errors
 	if len(c.Secret) == 0 {
