@@ -12,8 +12,8 @@ import (
 
 	"github.com/thomseddon/go-flags"
 
-	"github.com/traPtitech/traefik-forward-auth/internal/provider"
-	"github.com/traPtitech/traefik-forward-auth/types"
+	"github.com/dsbferris/traefik-forward-auth/internal/provider"
+	"github.com/dsbferris/traefik-forward-auth/types"
 )
 
 var config *Config

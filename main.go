@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	internal "github.com/traPtitech/traefik-forward-auth/internal"
+	internal "github.com/dsbferris/traefik-forward-auth/internal"
 )
 
 func main() {

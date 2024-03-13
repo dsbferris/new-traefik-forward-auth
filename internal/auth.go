@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/traPtitech/traefik-forward-auth/internal/provider"
+	"github.com/dsbferris/traefik-forward-auth/internal/provider"
 )
 
 // Request Validation

@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	mux "github.com/traefik/traefik/v2/pkg/muxer/http"
 
-	"github.com/traPtitech/traefik-forward-auth/internal/provider"
+	"github.com/dsbferris/traefik-forward-auth/internal/provider"
 )
 
 // Server contains router and handler methods

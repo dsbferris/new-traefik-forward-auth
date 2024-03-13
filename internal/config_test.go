@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dsbferris/traefik-forward-auth/types"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/traPtitech/traefik-forward-auth/types"
 )
 
 /**

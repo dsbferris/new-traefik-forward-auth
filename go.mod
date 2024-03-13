@@ -1,4 +1,4 @@
-module github.com/traPtitech/traefik-forward-auth
+module github.com/dsbferris/traefik-forward-auth
 
 go 1.22
 
