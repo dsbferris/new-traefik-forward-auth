@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dsbferris/traefik-forward-auth/internal/provider"
+	"github.com/dsbferris/traefik-forward-auth/provider"
 	"github.com/dsbferris/traefik-forward-auth/types"
 )
 

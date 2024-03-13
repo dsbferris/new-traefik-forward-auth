@@ -10,7 +10,7 @@ import (
 
 	mux "github.com/traefik/traefik/v2/pkg/muxer/http"
 
-	"github.com/dsbferris/traefik-forward-auth/internal/provider"
+	"github.com/dsbferris/traefik-forward-auth/provider"
 )
 
 // Server contains router and handler methods
