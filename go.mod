@@ -20,7 +20,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
-	github.com/gravitational/trace v1.3.1 // indirect
+	github.com/gravitational/trace v1.4.0 // indirect
 	github.com/jonboulle/clockwork v0.4.0 // indirect
 	github.com/miekg/dns v1.1.58 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
