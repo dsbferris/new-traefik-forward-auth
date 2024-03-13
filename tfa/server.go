@@ -1,6 +1,7 @@
 package tfa
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -111,10 +112,10 @@ func GetUserFromCookie(r *http.Request) (*string, error) {
 	// Validate cookie
 	user, err := ValidateCookie(r, c)
 	if err != nil {
-		if err.Error() == StrCookieExpired {
+		if errors.Is(err, ErrCookieExpired) {
 			return nil, nil
 		}
-		if err.Error() == StrInvalidSignature {
+		if errors.Is(err, ErrCookieInvalidSignature) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("invalid cookie: %w", err)

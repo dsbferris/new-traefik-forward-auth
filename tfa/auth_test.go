@@ -29,7 +29,7 @@ func TestAuthValidateCookie(t *testing.T) {
 
 		_, err := ValidateCookie(r, &http.Cookie{Value: ""})
 		if assert.Error(err) {
-			assert.Equal(StrInvalidFormat, err.Error())
+			assert.Equal(ErrCookieInvalidFormat, err)
 		}
 	})
 
@@ -52,17 +52,17 @@ func TestAuthValidateCookie(t *testing.T) {
 		c.Value = ""
 		_, err := ValidateCookie(r, c)
 		if assert.Error(err) {
-			assert.Equal(StrInvalidFormat, err.Error())
+			assert.Equal(ErrCookieInvalidFormat, err)
 		}
 		c.Value = "1|2"
 		_, err = ValidateCookie(r, c)
 		if assert.Error(err) {
-			assert.Equal(StrInvalidFormat, err.Error())
+			assert.Equal(ErrCookieInvalidFormat, err)
 		}
 		c.Value = "1|2|3|4"
 		_, err = ValidateCookie(r, c)
 		if assert.Error(err) {
-			assert.Equal(StrInvalidFormat, err.Error())
+			assert.Equal(ErrCookieInvalidFormat, err)
 		}
 	})
 
@@ -74,7 +74,7 @@ func TestAuthValidateCookie(t *testing.T) {
 		c.Value = "MQ==|2|3"
 		_, err := ValidateCookie(r, c)
 		if assert.Error(err) {
-			assert.Equal(StrInvalidSignature, err.Error())
+			assert.Equal(ErrCookieInvalidSignature, err)
 		}
 	})
 
@@ -87,7 +87,7 @@ func TestAuthValidateCookie(t *testing.T) {
 		c = MakeCookie(r, "test@test.com")
 		_, err := ValidateCookie(r, c)
 		if assert.Error(err) {
-			assert.Equal(StrCookieExpired, err.Error())
+			assert.Equal(ErrCookieExpired, err)
 		}
 	})
 
@@ -313,14 +313,14 @@ func TestAuthValidateRedirect(t *testing.T) {
 		return r
 	}
 
-	errStr := StrRedirectHostDoesNotMatchRequest
+	expectedErr := ErrRedirectHostRequested
 
 	_, err := ValidateRedirect(
 		newRedirectRequest("http://app.example.com/_oauth?state=123"),
 		"http://app.example.com.bad.com",
 	)
 	if assert.Error(err) {
-		assert.Equal(errStr, err.Error(), "Should not allow redirect to subdomain")
+		assert.Equal(expectedErr, err, "Should not allow redirect to subdomain")
 	}
 
 	_, err = ValidateRedirect(
@@ -328,7 +328,7 @@ func TestAuthValidateRedirect(t *testing.T) {
 		"http://app.example.combad.com",
 	)
 	if assert.Error(err) {
-		assert.Equal(errStr, err.Error(), "Should not allow redirect to overlapping domain")
+		assert.Equal(expectedErr, err, "Should not allow redirect to overlapping domain")
 	}
 
 	_, err = ValidateRedirect(
@@ -336,7 +336,7 @@ func TestAuthValidateRedirect(t *testing.T) {
 		"http://example.com",
 	)
 	if assert.Error(err) {
-		assert.Equal(errStr, err.Error(), "Should not allow redirect from subdomain")
+		assert.Equal(expectedErr, err, "Should not allow redirect from subdomain")
 	}
 
 	_, err = ValidateRedirect(
@@ -350,14 +350,14 @@ func TestAuthValidateRedirect(t *testing.T) {
 	//
 	config.AuthHost = "auth.example.com"
 	config.CookieDomains = types.CookieDomains{*types.NewCookieDomain("example.com")}
-	errStr = StrRedirectHostDoesNotMatchExpected
+	expectedErr = ErrRedirectHostExpected
 
 	_, err = ValidateRedirect(
 		newRedirectRequest("http://app.example.com/_oauth?state=123"),
 		"http://app.example.com.bad.com",
 	)
 	if assert.Error(err) {
-		assert.Equal(errStr, err.Error(), "Should not allow redirect to subdomain")
+		assert.Equal(expectedErr, err, "Should not allow redirect to subdomain")
 	}
 
 	_, err = ValidateRedirect(
@@ -365,7 +365,7 @@ func TestAuthValidateRedirect(t *testing.T) {
 		"http://app.example.combad.com",
 	)
 	if assert.Error(err) {
-		assert.Equal(errStr, err.Error(), "Should not allow redirect to overlapping domain")
+		assert.Equal(expectedErr, err, "Should not allow redirect to overlapping domain")
 	}
 
 	_, err = ValidateRedirect(
@@ -522,13 +522,13 @@ func TestAuthValidateCSRFCookie(t *testing.T) {
 	valid, _, _, err := ValidateCSRFCookie(c, state)
 	assert.False(valid)
 	if assert.Error(err) {
-		assert.Equal(StrInvalidCsrfCookieValue, err.Error())
+		assert.Equal(ErrCsrfInvalidValue, err)
 	}
 	c.Value = "123456789012345678901234567890123"
 	valid, _, _, err = ValidateCSRFCookie(c, state)
 	assert.False(valid)
 	if assert.Error(err) {
-		assert.Equal(StrInvalidCsrfCookieValue, err.Error())
+		assert.Equal(ErrCsrfInvalidValue, err)
 	}
 
 	// Should require provider
@@ -537,7 +537,7 @@ func TestAuthValidateCSRFCookie(t *testing.T) {
 	valid, _, _, err = ValidateCSRFCookie(c, state)
 	assert.False(valid)
 	if assert.Error(err) {
-		assert.Equal(StrInvalidCsrfStateFormat, err.Error())
+		assert.Equal(ErrCsrfStateFormat, err)
 	}
 
 	// Should allow valid state
@@ -557,7 +557,7 @@ func TestValidateState(t *testing.T) {
 	state := "12345678901234567890123456789012:"
 	err := ValidateState(state)
 	if assert.Error(err) {
-		assert.Equal(StrInvalidCsrfStateValue, err.Error())
+		assert.Equal(ErrCsrfStateValue, err)
 	}
 	// Should pass this state
 	state = "12345678901234567890123456789012:p99:url123"
