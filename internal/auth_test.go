@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/traPtitech/traefik-forward-auth/internal/provider"
+	"github.com/traPtitech/traefik-forward-auth/types"
 )
 
 /**
@@ -347,7 +348,7 @@ func TestAuthValidateRedirect(t *testing.T) {
 	// With Auth Host
 	//
 	config.AuthHost = "auth.example.com"
-	config.CookieDomains = []CookieDomain{*NewCookieDomain("example.com")}
+	config.CookieDomains = types.CookieDomains{*types.NewCookieDomain("example.com")}
 	errStr = StrRedirectHostDoesNotMatchExpected
 
 	_, err = ValidateRedirect(
@@ -418,7 +419,7 @@ func TestRedirectUri(t *testing.T) {
 	// With correct Auth URL + cookie domain
 	//
 	config.AuthHost = "auth.example.com"
-	config.CookieDomains = []CookieDomain{*NewCookieDomain("example.com")}
+	config.CookieDomains = types.CookieDomains{*types.NewCookieDomain("example.com")}
 
 	// Check url
 	uri, err = url.Parse(redirectUri(r))
@@ -435,7 +436,7 @@ func TestRedirectUri(t *testing.T) {
 	r.Header.Add("X-Forwarded-Proto", "https")
 
 	config.AuthHost = "auth.example.com"
-	config.CookieDomains = []CookieDomain{*NewCookieDomain("example.com")}
+	config.CookieDomains = types.CookieDomains{*types.NewCookieDomain("example.com")}
 
 	// Check url
 	uri, err = url.Parse(redirectUri(r))
@@ -483,14 +484,14 @@ func TestAuthMakeCSRFCookie(t *testing.T) {
 	assert.Equal("app.example.com", c.Domain)
 
 	// With cookie domain but no auth url
-	config.CookieDomains = []CookieDomain{*NewCookieDomain("example.com")}
+	config.CookieDomains = types.CookieDomains{*types.NewCookieDomain("example.com")}
 	c = MakeCSRFCookie(r, "12222278901234567890123456789012")
 	assert.Equal("_forward_auth_csrf_122222", c.Name)
 	assert.Equal("app.example.com", c.Domain)
 
 	// With cookie domain and auth url
 	config.AuthHost = "auth.example.com"
-	config.CookieDomains = []CookieDomain{*NewCookieDomain("example.com")}
+	config.CookieDomains = types.CookieDomains{*types.NewCookieDomain("example.com")}
 	c = MakeCSRFCookie(r, "12333378901234567890123456789012")
 	assert.Equal("_forward_auth_csrf_123333", c.Name)
 	assert.Equal("example.com", c.Domain)
@@ -599,7 +600,7 @@ func TestAuthNonce(t *testing.T) {
 
 func TestAuthCookieDomainMatch(t *testing.T) {
 	assert := assert.New(t)
-	cd := NewCookieDomain("example.com")
+	cd := types.NewCookieDomain("example.com")
 
 	// Exact should match
 	assert.True(cd.Match("example.com"), "exact domain should match")
@@ -618,18 +619,18 @@ func TestAuthCookieDomainMatch(t *testing.T) {
 
 func TestAuthCookieDomains(t *testing.T) {
 	assert := assert.New(t)
-	cds := CookieDomains{}
+	cds := types.CookieDomains{}
 
 	err := cds.UnmarshalFlag("one.com,two.org")
 	assert.Nil(err)
-	expected := CookieDomains{
-		CookieDomain{
+	expected := types.CookieDomains{
+		types.CookieDomain{
 			Domain:       "one.com",
 			DomainLen:    7,
 			SubDomain:    ".one.com",
 			SubDomainLen: 8,
 		},
-		CookieDomain{
+		types.CookieDomain{
 			Domain:       "two.org",
 			DomainLen:    7,
 			SubDomain:    ".two.org",

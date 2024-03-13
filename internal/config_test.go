@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/traPtitech/traefik-forward-auth/types"
 )
 
 /**
@@ -167,9 +168,9 @@ func TestConfigParseEnvironment(t *testing.T) {
 
 	assert.Equal("env_cookie_name", c.CookieName, "variable should be read from environment")
 	assert.Equal("env_client_id", c.Providers.Google.ClientID, "namespace variable should be read from environment")
-	assert.Equal([]CookieDomain{
-		*NewCookieDomain("test1.com"),
-		*NewCookieDomain("example.org"),
+	assert.Equal(types.CookieDomains{
+		*types.NewCookieDomain("test1.com"),
+		*types.NewCookieDomain("example.org"),
 	}, c.CookieDomains, "array variable should be read from environment COOKIE_DOMAIN")
 	assert.Equal(CommaSeparatedList{"test2.com", "example.org"}, c.Domains, "array variable should be read from environment DOMAIN")
 	assert.Equal(CommaSeparatedList{"test3.com", "example.org"}, c.Whitelist, "array variable should be read from environment WHITELIST")

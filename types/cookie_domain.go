@@ -1,4 +1,4 @@
-package tfa
+package types
 
 import (
 	"fmt"
