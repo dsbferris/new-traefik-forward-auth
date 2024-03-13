@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/thomseddon/go-flags"
 
 	"github.com/dsbferris/traefik-forward-auth/internal/provider"
@@ -228,7 +229,7 @@ func handleFlagError(err error) error {
 }
 
 // Validate validates a config object
-func (c *Config) Validate() {
+func ValidateConfig(c *Config, log *logrus.Logger) {
 	// Check for show stopper errors
 	if len(c.Secret) == 0 {
 		log.Fatal("\"secret\" option must be set")

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+
 	mux "github.com/traefik/traefik/v2/pkg/muxer/http"
 
 	"github.com/dsbferris/traefik-forward-auth/internal/provider"
@@ -15,11 +16,12 @@ import (
 // Server contains router and handler methods
 type Server struct {
 	muxer *mux.Muxer
+	log   *logrus.Logger
 }
 
 // NewServer creates a new server object and builds router
-func NewServer() *Server {
-	s := &Server{}
+func NewServer(log *logrus.Logger) *Server {
+	s := &Server{log: log}
 	s.buildRoutes()
 	return s
 }
@@ -34,7 +36,7 @@ func (s *Server) buildRoutes() {
 	var err error
 	s.muxer, err = mux.NewMuxer()
 	if err != nil {
-		log.Fatal(err)
+		s.log.Fatal(err)
 	}
 
 	// Let's build a router
@@ -418,7 +420,7 @@ func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *ht
 
 func (s *Server) logger(r *http.Request, handler, rule, msg string) *logrus.Entry {
 	// Create logger
-	logger := log.WithFields(logrus.Fields{
+	logger := s.log.WithFields(logrus.Fields{
 		"handler":   handler,
 		"rule":      rule,
 		"method":    escapeNewlines(r.Header.Get("X-Forwarded-Method")),

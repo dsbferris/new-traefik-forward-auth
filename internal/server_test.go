@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dsbferris/traefik-forward-auth/log"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -23,8 +24,8 @@ import (
 
 func init() {
 	config = newDefaultConfig()
-	config.LogLevel = "panic"
-	log = NewDefaultLogger()
+	// config.LogLevel = "panic"
+	// log = NewDefaultLogger()
 }
 
 /**
@@ -41,7 +42,7 @@ func TestServerRootHandler(t *testing.T) {
 	req.Header.Add("X-Forwarded-Proto", "https")
 	req.Header.Add("X-Forwarded-Host", "example.com")
 	req.Header.Add("X-Forwarded-Uri", "/foo?q=bar")
-	NewServer().RootHandler(httptest.NewRecorder(), req)
+	NewServer(log.NewDefaultLogger()).RootHandler(httptest.NewRecorder(), req)
 
 	assert.Equal("GET", req.Method, "x-forwarded-method should be read into request")
 	assert.Equal("example.com", req.Host, "x-forwarded-host should be read into request")
@@ -54,7 +55,7 @@ func TestServerRootHandler(t *testing.T) {
 	req.Header.Add("X-Forwarded-Method", "GET")
 	req.Header.Add("X-Forwarded-Proto", "https")
 	req.Header.Add("X-Forwarded-Host", "example.com")
-	NewServer().RootHandler(httptest.NewRecorder(), req)
+	NewServer(log.NewDefaultLogger()).RootHandler(httptest.NewRecorder(), req)
 
 	assert.Equal("GET", req.Method, "x-forwarded-method should be read into request")
 	assert.Equal("example.com", req.Host, "x-forwarded-host should be read into request")
@@ -65,8 +66,7 @@ func TestServerRootHandler(t *testing.T) {
 func TestServerAuthHandlerInvalid(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	var hook *test.Hook
-	log, hook = test.NewNullLogger()
+	_, hook := test.NewNullLogger()
 
 	// Should redirect vanilla request to login url
 	req := newDefaultHttpRequest("/foo")
@@ -575,7 +575,7 @@ func doHttpRequest(r *http.Request, c *http.Cookie) (*http.Response, string) {
 		r.Header.Add("Cookie", c)
 	}
 
-	NewServer().RootHandler(w, r)
+	NewServer(log.NewDefaultLogger()).RootHandler(w, r)
 
 	res := w.Result()
 	body, _ := io.ReadAll(res.Body)

@@ -204,15 +204,14 @@ func TestConfigValidate(t *testing.T) {
 	assert := assert.New(t)
 
 	// Install new logger + hook
-	var hook *test.Hook
-	log, hook = test.NewNullLogger()
+	log, hook := test.NewNullLogger()
 	log.ExitFunc = func(code int) {}
 
 	// Validate defualt config + rule error
 	c, _ := NewConfig([]string{
 		"--rule.1.action=bad",
 	})
-	c.Validate()
+	ValidateConfig(c, log)
 
 	logs := hook.AllEntries()
 	assert.Len(logs, 3)
@@ -239,7 +238,7 @@ func TestConfigValidate(t *testing.T) {
 		"--rule.1.action=auth",
 		"--rule.1.provider=bad2",
 	})
-	c.Validate()
+	ValidateConfig(c, log)
 
 	logs = hook.AllEntries()
 	assert.Len(logs, 1)

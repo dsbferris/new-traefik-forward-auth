@@ -1,4 +1,4 @@
-package tfa
+package log
 
 import (
 	"os"
@@ -8,14 +8,20 @@ import (
 
 var log *logrus.Logger
 
-// NewDefaultLogger creates a new logger based on the current configuration
 func NewDefaultLogger() *logrus.Logger {
+	log = logrus.StandardLogger()
+	log.Level = logrus.PanicLevel
+	return log
+}
+
+// NewLogger creates a new logger based on the current configuration
+func NewLogger(logFormat, logLevel string) *logrus.Logger {
 	// Setup logger
 	log = logrus.StandardLogger()
 	logrus.SetOutput(os.Stdout)
 
 	// Set logger format
-	switch config.LogFormat {
+	switch logFormat {
 	case "pretty":
 		break
 	case "json":
@@ -29,7 +35,7 @@ func NewDefaultLogger() *logrus.Logger {
 	}
 
 	// Set logger level
-	switch config.LogLevel {
+	switch logLevel {
 	case "trace":
 		logrus.SetLevel(logrus.TraceLevel)
 	case "debug":

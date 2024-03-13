@@ -5,20 +5,21 @@ import (
 	"net/http"
 
 	internal "github.com/dsbferris/traefik-forward-auth/internal"
+	log "github.com/dsbferris/traefik-forward-auth/log"
 )
 
 func main() {
 	config := internal.NewGlobalConfig()
-	log := internal.NewDefaultLogger()
+	logger := log.NewDefaultLogger()
 
-	config.Validate()
+	internal.ValidateConfig(config, logger)
 
-	server := internal.NewServer()
+	server := internal.NewServer(logger)
 
 	// Attach router to default server
 	http.HandleFunc("/", server.RootHandler)
 
-	log.WithField("config", config).Debug("Starting with config")
-	log.Infof("Listening on :%d", config.Port)
-	log.Info(http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil))
+	logger.WithField("config", config).Debug("Starting with config")
+	logger.Infof("Listening on :%d", config.Port)
+	logger.Info(http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil))
 }
