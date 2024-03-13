@@ -131,8 +131,8 @@ func TestConfigCommaSeperated(t *testing.T) {
 func TestConfigParseIni(t *testing.T) {
 	assert := assert.New(t)
 	c, err := NewConfig([]string{
-		"--config=../test/config0",
-		"--config=../test/config1",
+		"--config=../testfiles/config0",
+		"--config=../testfiles/config1",
 		"--csrf-cookie-name=csrfcookiename",
 	})
 	require.Nil(t, err)
