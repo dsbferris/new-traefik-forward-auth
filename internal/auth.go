@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/dsbferris/traefik-forward-auth/internal/provider"
+	"github.com/dsbferris/traefik-forward-auth/types"
 )
 
 // Request Validation
@@ -138,7 +139,7 @@ func ValidateUser(user, ruleName string) bool {
 }
 
 // ValidateWhitelist checks if the email is in whitelist
-func ValidateWhitelist(user string, whitelist CommaSeparatedList) bool {
+func ValidateWhitelist(user string, whitelist types.CommaSeparatedList) bool {
 	for _, whitelist := range whitelist {
 		if user == whitelist {
 			return true
@@ -148,7 +149,7 @@ func ValidateWhitelist(user string, whitelist CommaSeparatedList) bool {
 }
 
 // ValidateDomains checks if the email matches a whitelisted domain
-func ValidateDomains(user string, domains CommaSeparatedList) bool {
+func ValidateDomains(user string, domains types.CommaSeparatedList) bool {
 	parts := strings.Split(user, "@")
 	if len(parts) < 2 {
 		return false

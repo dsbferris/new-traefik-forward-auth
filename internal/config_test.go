@@ -33,7 +33,7 @@ func TestConfigDefaults(t *testing.T) {
 	assert.Equal("auth", c.DefaultAction)
 	assert.Equal("google", c.DefaultProvider)
 	assert.Len(c.Domains, 0)
-	assert.Equal(CommaSeparatedList{"X-Forwarded-User"}, c.HeaderNames)
+	assert.Equal(types.CommaSeparatedList{"X-Forwarded-User"}, c.HeaderNames)
 	assert.Equal(time.Second*time.Duration(43200), c.Lifetime)
 	assert.False(c.MatchWhitelistOrDomain)
 	assert.Equal("/_oauth", c.Path)
@@ -125,7 +125,7 @@ func TestConfigCommaSeperated(t *testing.T) {
 	})
 	require.Nil(t, err)
 
-	expected1 := CommaSeparatedList{"test@test.com", "test2@test2.com"}
+	expected1 := types.CommaSeparatedList{"test@test.com", "test2@test2.com"}
 	assert.Equal(expected1, c.Whitelist, "should read legacy comma separated list whitelist")
 }
 
@@ -172,8 +172,8 @@ func TestConfigParseEnvironment(t *testing.T) {
 		*types.NewCookieDomain("test1.com"),
 		*types.NewCookieDomain("example.org"),
 	}, c.CookieDomains, "array variable should be read from environment COOKIE_DOMAIN")
-	assert.Equal(CommaSeparatedList{"test2.com", "example.org"}, c.Domains, "array variable should be read from environment DOMAIN")
-	assert.Equal(CommaSeparatedList{"test3.com", "example.org"}, c.Whitelist, "array variable should be read from environment WHITELIST")
+	assert.Equal(types.CommaSeparatedList{"test2.com", "example.org"}, c.Domains, "array variable should be read from environment DOMAIN")
+	assert.Equal(types.CommaSeparatedList{"test3.com", "example.org"}, c.Whitelist, "array variable should be read from environment WHITELIST")
 
 	os.Unsetenv("COOKIE_NAME")
 	os.Unsetenv("PROVIDERS_GOOGLE_CLIENT_ID")
@@ -293,11 +293,11 @@ func TestConfigGetConfiguredProvider(t *testing.T) {
 
 func TestConfigCommaSeparatedList(t *testing.T) {
 	assert := assert.New(t)
-	list := CommaSeparatedList{}
+	list := types.CommaSeparatedList{}
 
 	err := list.UnmarshalFlag("one,two")
 	assert.Nil(err)
-	assert.Equal(CommaSeparatedList{"one", "two"}, list, "should parse comma sepearated list")
+	assert.Equal(types.CommaSeparatedList{"one", "two"}, list, "should parse comma sepearated list")
 
 	marshal, err := list.MarshalFlag()
 	assert.Nil(err)
