@@ -19,16 +19,6 @@ import (
 )
 
 /**
- * Setup
- */
-
-func init() {
-	config = newDefaultConfig()
-	// config.LogLevel = "panic"
-	// log = NewDefaultLogger()
-}
-
-/**
  * Tests
  */
 
