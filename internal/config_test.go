@@ -73,7 +73,7 @@ func TestConfigParseArgs(t *testing.T) {
 	assert.Equal(c.ProbeTokenUser, "toki")
 
 	// Check rules
-	assert.Equal(map[string]*Rule{
+	assert.Equal(map[string]*types.Rule{
 		"1": {
 			Action:   "allow",
 			Rule:     "PathPrefix(`/one`)",
@@ -115,7 +115,7 @@ func TestConfigParseRuleError(t *testing.T) {
 		assert.Equal("route param value is required", err.Error())
 	}
 	// Check rules
-	assert.Equal(map[string]*Rule{}, c.Rules)
+	assert.Equal(map[string]*types.Rule{}, c.Rules)
 }
 
 func TestConfigCommaSeperated(t *testing.T) {
@@ -141,7 +141,7 @@ func TestConfigParseIni(t *testing.T) {
 	assert.Equal("inicookiename", c.CookieName, "should be read from ini file")
 	assert.Equal("csrfcookiename", c.CSRFCookieName, "should be read from ini file")
 	assert.Equal("/two", c.Path, "variable in second ini file should override first ini file")
-	assert.Equal(map[string]*Rule{
+	assert.Equal(map[string]*types.Rule{
 		"1": {
 			Action:   "allow",
 			Rule:     "PathPrefix(`/one`)",

@@ -45,8 +45,8 @@ type Config struct {
 	ProbeToken             types.CommaSeparatedList `long:"probe-token" env:"PROBE_TOKEN" env-delim:"," description:"Static probe token which is always passed"`
 	ProbeTokenUser         string                   `long:"probe-token-user" env:"PROBE_TOKEN_USER" default:"probe" description:"User authenticated with static probe token"`
 
-	Providers provider.Providers `group:"providers" namespace:"providers" env-namespace:"PROVIDERS"`
-	Rules     map[string]*Rule   `long:"rule.<name>.<param>" description:"Rule definitions, param can be: \"action\", \"rule\" or \"provider\""`
+	Providers provider.Providers     `group:"providers" namespace:"providers" env-namespace:"PROVIDERS"`
+	Rules     map[string]*types.Rule `long:"rule.<name>.<param>" description:"Rule definitions, param can be: \"action\", \"rule\" or \"provider\""`
 
 	// Filled during transformations
 	Secret   []byte `json:"-"`
@@ -73,7 +73,7 @@ func NewGlobalConfig() *Config {
 // NewConfig parses and validates provided configuration into a config object
 func NewConfig(args []string) (*Config, error) {
 	c := &Config{
-		Rules: map[string]*Rule{},
+		Rules: map[string]*types.Rule{},
 	}
 
 	err := c.parseFlags(args)
@@ -188,7 +188,7 @@ func (c *Config) parseUnknownFlag(option string, arg flags.SplitArgument, args [
 		// Get or create rule
 		rule, ok := c.Rules[name]
 		if !ok {
-			rule = NewRule()
+			rule = types.NewRule()
 			c.Rules[name] = rule
 		}
 
@@ -247,7 +247,7 @@ func ValidateConfig(c *Config, log *logrus.Logger) {
 
 	// Check rules (validates the rule and the rule provider)
 	for _, rule := range c.Rules {
-		err = rule.Validate(c)
+		err = rule.Validate(c.setupProvider)
 		if err != nil {
 			log.Fatal(err)
 		}

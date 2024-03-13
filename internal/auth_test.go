@@ -174,7 +174,7 @@ func TestAuthValidateUser(t *testing.T) {
 	// Should use global whitelist/domain when not specified on rule
 	config.Domains = []string{"example.com"}
 	config.Whitelist = []string{"test@test.com"}
-	config.Rules = map[string]*Rule{"test": NewRule()}
+	config.Rules = map[string]*types.Rule{"test": types.NewRule()}
 	config.MatchWhitelistOrDomain = true
 	v = ValidateUser("one@two.com", "test")
 	assert.False(v, "should not allow user not in either")
@@ -186,8 +186,8 @@ func TestAuthValidateUser(t *testing.T) {
 	// Should allow matching domain in rule
 	config.Domains = []string{"testglobal.com"}
 	config.Whitelist = []string{}
-	rule := NewRule()
-	config.Rules = map[string]*Rule{"test": rule}
+	rule := types.NewRule()
+	config.Rules = map[string]*types.Rule{"test": rule}
 	rule.Domains = []string{"testrule.com"}
 	config.MatchWhitelistOrDomain = false
 	v = ValidateUser("one@two.com", "test")
@@ -205,8 +205,8 @@ func TestAuthValidateUser(t *testing.T) {
 	// Should allow matching whitelist in rule
 	config.Domains = []string{}
 	config.Whitelist = []string{"test@testglobal.com"}
-	rule = NewRule()
-	config.Rules = map[string]*Rule{"test": rule}
+	rule = types.NewRule()
+	config.Rules = map[string]*types.Rule{"test": rule}
 	rule.Whitelist = []string{"test@testrule.com"}
 	config.MatchWhitelistOrDomain = false
 	v = ValidateUser("one@two.com", "test")
@@ -220,8 +220,8 @@ func TestAuthValidateUser(t *testing.T) {
 	// MatchWhitelistOrDomain is disabled
 	config.Domains = []string{"exampleglobal.com"}
 	config.Whitelist = []string{"test@testglobal.com"}
-	rule = NewRule()
-	config.Rules = map[string]*Rule{"test": rule}
+	rule = types.NewRule()
+	config.Rules = map[string]*types.Rule{"test": rule}
 	rule.Domains = []string{"examplerule.com"}
 	rule.Whitelist = []string{"test@testrule.com"}
 	config.MatchWhitelistOrDomain = false
@@ -240,8 +240,8 @@ func TestAuthValidateUser(t *testing.T) {
 	// MatchWhitelistOrDomain is enabled
 	config.Domains = []string{"exampleglobal.com"}
 	config.Whitelist = []string{"test@testglobal.com"}
-	rule = NewRule()
-	config.Rules = map[string]*Rule{"test": rule}
+	rule = types.NewRule()
+	config.Rules = map[string]*types.Rule{"test": rule}
 	rule.Domains = []string{"examplerule.com"}
 	rule.Whitelist = []string{"test@testrule.com"}
 	config.MatchWhitelistOrDomain = true

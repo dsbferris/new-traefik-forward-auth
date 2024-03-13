@@ -41,7 +41,7 @@ func (s *Server) buildRoutes() {
 
 	// Let's build a router
 	for name, rule := range config.Rules {
-		matchRule := rule.formattedRule()
+		matchRule := rule.FormattedRule()
 		err = s.muxer.AddRoute(matchRule, 1, s.Handler(rule.Action, rule.Provider, name))
 		if err != nil {
 			panic(err) // should not occur because rule is validated beforehand

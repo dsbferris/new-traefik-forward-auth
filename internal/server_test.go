@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/dsbferris/traefik-forward-auth/log"
+	"github.com/dsbferris/traefik-forward-auth/types"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -385,7 +386,7 @@ func TestServerDefaultProvider(t *testing.T) {
 func TestServerRouteHeaders(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	config.Rules = map[string]*Rule{
+	config.Rules = map[string]*types.Rule{
 		"1": {
 			Action: "allow",
 			Rule:   "Headers(`X-Test`, `test123`)",
@@ -419,7 +420,7 @@ func TestServerRouteHeaders(t *testing.T) {
 func TestServerRouteHost(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	config.Rules = map[string]*Rule{
+	config.Rules = map[string]*types.Rule{
 		"1": {
 			Action: "allow",
 			Rule:   "Host(`api.example.com`)",
@@ -450,7 +451,7 @@ func TestServerRouteHost(t *testing.T) {
 func TestServerRouteMethod(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	config.Rules = map[string]*Rule{
+	config.Rules = map[string]*types.Rule{
 		"1": {
 			Action: "allow",
 			Rule:   "Method(`PUT`)",
@@ -472,7 +473,7 @@ func TestServerRouteMethod(t *testing.T) {
 func TestServerRoutePath(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	config.Rules = map[string]*Rule{
+	config.Rules = map[string]*types.Rule{
 		"1": {
 			Action: "allow",
 			Rule:   "Path(`/api`)",
@@ -507,7 +508,7 @@ func TestServerRoutePath(t *testing.T) {
 func TestServerRouteQuery(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	config.Rules = map[string]*Rule{
+	config.Rules = map[string]*types.Rule{
 		"1": {
 			Action: "allow",
 			Rule:   "Query(`q=test123`)",
