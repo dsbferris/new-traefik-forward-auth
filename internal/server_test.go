@@ -35,6 +35,7 @@ func init() {
 func TestServerRootHandler(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
+	logger := log.NewDefaultLogger()
 
 	// X-Forwarded headers should be read into request
 	req := httptest.NewRequest("POST", "http://should-use-x-forwarded.com/should?ignore=me", nil)
@@ -42,7 +43,7 @@ func TestServerRootHandler(t *testing.T) {
 	req.Header.Add("X-Forwarded-Proto", "https")
 	req.Header.Add("X-Forwarded-Host", "example.com")
 	req.Header.Add("X-Forwarded-Uri", "/foo?q=bar")
-	NewServer(log.NewDefaultLogger()).RootHandler(httptest.NewRecorder(), req)
+	NewServer(logger).RootHandler(httptest.NewRecorder(), req)
 
 	assert.Equal("GET", req.Method, "x-forwarded-method should be read into request")
 	assert.Equal("example.com", req.Host, "x-forwarded-host should be read into request")
@@ -55,7 +56,7 @@ func TestServerRootHandler(t *testing.T) {
 	req.Header.Add("X-Forwarded-Method", "GET")
 	req.Header.Add("X-Forwarded-Proto", "https")
 	req.Header.Add("X-Forwarded-Host", "example.com")
-	NewServer(log.NewDefaultLogger()).RootHandler(httptest.NewRecorder(), req)
+	NewServer(logger).RootHandler(httptest.NewRecorder(), req)
 
 	assert.Equal("GET", req.Method, "x-forwarded-method should be read into request")
 	assert.Equal("example.com", req.Host, "x-forwarded-host should be read into request")
@@ -66,11 +67,12 @@ func TestServerRootHandler(t *testing.T) {
 func TestServerAuthHandlerInvalid(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	_, hook := test.NewNullLogger()
+	logger, hook := test.NewNullLogger()
+	logger.SetLevel(logrus.WarnLevel)
 
 	// Should redirect vanilla request to login url
 	req := newDefaultHttpRequest("/foo")
-	res, _ := doHttpRequest(req, nil)
+	res, _ := doHttpRequest(req, nil, logger)
 	assert.Equal(307, res.StatusCode, "vanilla request should be redirected")
 
 	fwd, _ := res.Location()
@@ -102,7 +104,7 @@ func TestServerAuthHandlerInvalid(t *testing.T) {
 	parts = strings.Split(c.Value, "|")
 	c.Value = fmt.Sprintf("bad|%s|%s", parts[1], parts[2])
 
-	res, _ = doHttpRequest(req, c)
+	res, _ = doHttpRequest(req, c, logger)
 	assert.Equal(401, res.StatusCode, "invalid cookie should not be authorised")
 
 	// Should validate email
@@ -110,20 +112,21 @@ func TestServerAuthHandlerInvalid(t *testing.T) {
 	c = MakeCookie(req, "test@example.com")
 	config.Domains = []string{"test.com"}
 
-	res, _ = doHttpRequest(req, c)
+	res, _ = doHttpRequest(req, c, logger)
 	assert.Equal(401, res.StatusCode, "invalid email should not be authorised")
 }
 
 func TestServerAuthHandlerExpired(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
+	logger := log.NewDefaultLogger()
 	config.Lifetime = time.Second * time.Duration(-1)
 	config.Domains = []string{"test.com"}
 
 	// Should redirect expired cookie
 	req := newHTTPRequest("GET", "http://example.com/foo")
 	c := MakeCookie(req, "test@example.com")
-	res, _ := doHttpRequest(req, c)
+	res, _ := doHttpRequest(req, c, logger)
 	require.Equal(t, 307, res.StatusCode, "request with expired cookie should be redirected")
 
 	// Check for CSRF cookie
@@ -145,13 +148,13 @@ func TestServerAuthHandlerExpired(t *testing.T) {
 func TestServerAuthHandlerValid(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-
+	logger := log.NewDefaultLogger()
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
 	c := MakeCookie(req, "test@example.com")
 	config.Domains = []string{}
 
-	res, _ := doHttpRequest(req, c)
+	res, _ := doHttpRequest(req, c, logger)
 	assert.Equal(200, res.StatusCode, "valid request should be allowed")
 
 	// Should pass through user
@@ -163,36 +166,39 @@ func TestServerAuthHandlerValid(t *testing.T) {
 func TestServerAuthHandlerTrustedIP_trusted(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
+	logger := log.NewDefaultLogger()
 
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
 	req.Header.Set("X-Forwarded-For", "127.0.0.2")
 
-	res, _ := doHttpRequest(req, nil)
+	res, _ := doHttpRequest(req, nil, logger)
 	assert.Equal(200, res.StatusCode, "trusted ip should be allowed")
 }
 
 func TestServerAuthHandlerTrustedIP_notTrusted(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
+	logger := log.NewDefaultLogger()
 
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
 	req.Header.Set("X-Forwarded-For", "127.0.0.1")
 
-	res, _ := doHttpRequest(req, nil)
+	res, _ := doHttpRequest(req, nil, logger)
 	assert.Equal(307, res.StatusCode, "untrusted ip should not be allowed")
 }
 
 func TestServerAuthHandlerTrustedIP_invalidAddress(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
+	logger := log.NewDefaultLogger()
 
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
 	req.Header.Set("X-Forwarded-For", "127.0")
 
-	res, _ := doHttpRequest(req, nil)
+	res, _ := doHttpRequest(req, nil, logger)
 	assert.Equal(307, res.StatusCode, "invalid ip should not be allowed")
 }
 
@@ -200,6 +206,7 @@ func TestServerAuthCallback(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 	config = newDefaultConfig()
+	logger := log.NewDefaultLogger()
 
 	// Setup OAuth server
 	server, serverURL := NewOAuthServer(t)
@@ -217,26 +224,26 @@ func TestServerAuthCallback(t *testing.T) {
 
 	// Should pass auth response request to callback
 	req := newHTTPRequest("GET", "http://example.com/_oauth")
-	res, _ := doHttpRequest(req, nil)
+	res, _ := doHttpRequest(req, nil, logger)
 	assert.Equal(401, res.StatusCode, "auth callback without cookie shouldn't be authorised")
 
 	// Should catch invalid csrf cookie
 	nonce := "12345678901234567890123456789012"
 	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":http://example.com")
 	c := MakeCSRFCookie(req, "nononononononononononononononono")
-	res, _ = doHttpRequest(req, c)
+	res, _ = doHttpRequest(req, c, logger)
 	assert.Equal(401, res.StatusCode, "auth callback with invalid cookie shouldn't be authorised")
 
 	// Should catch invalid provider cookie
 	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":invalid:http://example.com")
 	c = MakeCSRFCookie(req, nonce)
-	res, _ = doHttpRequest(req, c)
+	res, _ = doHttpRequest(req, c, logger)
 	assert.Equal(401, res.StatusCode, "auth callback with invalid provider shouldn't be authorised")
 
 	// Should redirect valid request
 	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":google:http://example.com")
 	c = MakeCSRFCookie(req, nonce)
-	res, _ = doHttpRequest(req, c)
+	res, _ = doHttpRequest(req, c, logger)
 	require.Equal(307, res.StatusCode, "valid auth callback should be allowed")
 
 	fwd, _ := res.Location()
@@ -248,6 +255,7 @@ func TestServerAuthCallback(t *testing.T) {
 func TestServerAuthCallbackExchangeFailure(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
+	logger := log.NewDefaultLogger()
 
 	// Setup OAuth server
 	server, serverURL := NewFailingOAuthServer(t)
@@ -266,13 +274,14 @@ func TestServerAuthCallbackExchangeFailure(t *testing.T) {
 	// Should handle failed code exchange
 	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:google:http://example.com")
 	c := MakeCSRFCookie(req, "12345678901234567890123456789012")
-	res, _ := doHttpRequest(req, c)
+	res, _ := doHttpRequest(req, c, logger)
 	assert.Equal(503, res.StatusCode, "auth callback should handle failed code exchange")
 }
 
 func TestServerAuthCallbackUserFailure(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
+	logger := log.NewDefaultLogger()
 
 	// Setup OAuth server
 	server, serverURL := NewOAuthServer(t)
@@ -293,7 +302,7 @@ func TestServerAuthCallbackUserFailure(t *testing.T) {
 	// Should handle failed user request
 	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:google:http://example.com")
 	c := MakeCSRFCookie(req, "12345678901234567890123456789012")
-	res, _ := doHttpRequest(req, c)
+	res, _ := doHttpRequest(req, c, logger)
 	assert.Equal(503, res.StatusCode, "auth callback should handle failed user request")
 }
 
@@ -301,9 +310,10 @@ func TestServerLogout(t *testing.T) {
 	require := require.New(t)
 	assert := assert.New(t)
 	config = newDefaultConfig()
+	logger := log.NewDefaultLogger()
 
 	req := newDefaultHttpRequest("/_oauth/logout")
-	res, _ := doHttpRequest(req, nil)
+	res, _ := doHttpRequest(req, nil, logger)
 	require.Equal(307, res.StatusCode, "should return a 307")
 
 	// Check for cookie
@@ -318,7 +328,7 @@ func TestServerLogout(t *testing.T) {
 
 	// Test with redirect
 	req = newDefaultHttpRequest("/_oauth/logout?redirect=/path")
-	res, _ = doHttpRequest(req, nil)
+	res, _ = doHttpRequest(req, nil, logger)
 	require.Equal(307, res.StatusCode, "should return a 307")
 
 	// Check for cookie
@@ -342,24 +352,26 @@ func TestServerLogout(t *testing.T) {
 func TestServerDefaultAction(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
+	logger := log.NewDefaultLogger()
 
 	req := newDefaultHttpRequest("/random")
-	res, _ := doHttpRequest(req, nil)
+	res, _ := doHttpRequest(req, nil, logger)
 	assert.Equal(307, res.StatusCode, "request should require auth with auth default handler")
 
 	config.DefaultAction = "allow"
 	req = newDefaultHttpRequest("/random")
-	res, _ = doHttpRequest(req, nil)
+	res, _ = doHttpRequest(req, nil, logger)
 	assert.Equal(200, res.StatusCode, "request should be allowed with default handler")
 }
 
 func TestServerDefaultProvider(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
+	logger := log.NewDefaultLogger()
 
 	// Should use "google" as default provider when not specified
 	req := newDefaultHttpRequest("/random")
-	res, _ := doHttpRequest(req, nil)
+	res, _ := doHttpRequest(req, nil, logger)
 	fwd, _ := res.Location()
 	assert.Equal("https", fwd.Scheme, "request with expired cookie should be redirected to google")
 	assert.Equal("accounts.google.com", fwd.Host, "request with expired cookie should be redirected to google")
@@ -373,7 +385,7 @@ func TestServerDefaultProvider(t *testing.T) {
 		},
 	}
 
-	res, _ = doHttpRequest(req, nil)
+	res, _ = doHttpRequest(req, nil, logger)
 	fwd, _ = res.Location()
 	assert.Equal("https", fwd.Scheme, "request with expired cookie should be redirected to oidc")
 	assert.Equal("oidc.com", fwd.Host, "request with expired cookie should be redirected to oidc")
@@ -393,23 +405,24 @@ func TestServerRouteHeaders(t *testing.T) {
 			Rule:   "HeadersRegexp(`X-Test`, `test(456|789)`)",
 		},
 	}
+	logger := log.NewDefaultLogger()
 
 	// Should block any request
 	req := newDefaultHttpRequest("/random")
 	req.Header.Add("X-Random", "hello")
-	res, _ := doHttpRequest(req, nil)
+	res, _ := doHttpRequest(req, nil, logger)
 	assert.Equal(307, res.StatusCode, "request not matching any rule should require auth")
 
 	// Should allow matching
 	req = newDefaultHttpRequest("/api")
 	req.Header.Add("X-Test", "test123")
-	res, _ = doHttpRequest(req, nil)
+	res, _ = doHttpRequest(req, nil, logger)
 	assert.Equal(200, res.StatusCode, "request matching allow rule should be allowed")
 
 	// Should allow matching
 	req = newDefaultHttpRequest("/api")
 	req.Header.Add("X-Test", "test789")
-	res, _ = doHttpRequest(req, nil)
+	res, _ = doHttpRequest(req, nil, logger)
 	assert.Equal(200, res.StatusCode, "request matching allow rule should be allowed")
 }
 
@@ -426,20 +439,21 @@ func TestServerRouteHost(t *testing.T) {
 			Rule:   "HostRegexp(`sub{num:[0-9]}.example.com`)",
 		},
 	}
+	logger := log.NewDefaultLogger()
 
 	// Should block any request
 	req := newHTTPRequest("GET", "https://example.com/")
-	res, _ := doHttpRequest(req, nil)
+	res, _ := doHttpRequest(req, nil, logger)
 	assert.Equal(307, res.StatusCode, "request not matching any rule should require auth")
 
 	// Should allow matching request
 	req = newHTTPRequest("GET", "https://api.example.com/")
-	res, _ = doHttpRequest(req, nil)
+	res, _ = doHttpRequest(req, nil, logger)
 	assert.Equal(200, res.StatusCode, "request matching allow rule should be allowed")
 
 	// Should allow matching request
 	req = newHTTPRequest("GET", "https://sub8.example.com/")
-	res, _ = doHttpRequest(req, nil)
+	res, _ = doHttpRequest(req, nil, logger)
 	assert.Equal(200, res.StatusCode, "request matching allow rule should be allowed")
 }
 
@@ -452,15 +466,16 @@ func TestServerRouteMethod(t *testing.T) {
 			Rule:   "Method(`PUT`)",
 		},
 	}
+	logger := log.NewDefaultLogger()
 
 	// Should block any request
 	req := newHTTPRequest("GET", "https://example.com/")
-	res, _ := doHttpRequest(req, nil)
+	res, _ := doHttpRequest(req, nil, logger)
 	assert.Equal(307, res.StatusCode, "request not matching any rule should require auth")
 
 	// Should allow matching request
 	req = newHTTPRequest("PUT", "https://example.com/")
-	res, _ = doHttpRequest(req, nil)
+	res, _ = doHttpRequest(req, nil, logger)
 	assert.Equal(200, res.StatusCode, "request matching allow rule should be allowed")
 }
 
@@ -477,24 +492,25 @@ func TestServerRoutePath(t *testing.T) {
 			Rule:   "PathPrefix(`/private`)",
 		},
 	}
+	logger := log.NewDefaultLogger()
 
 	// Should block any request
 	req := newDefaultHttpRequest("/random")
-	res, _ := doHttpRequest(req, nil)
+	res, _ := doHttpRequest(req, nil, logger)
 	assert.Equal(307, res.StatusCode, "request not matching any rule should require auth")
 
 	// Should allow /api request
 	req = newDefaultHttpRequest("/api")
-	res, _ = doHttpRequest(req, nil)
+	res, _ = doHttpRequest(req, nil, logger)
 	assert.Equal(200, res.StatusCode, "request matching allow rule should be allowed")
 
 	// Should allow /private request
 	req = newDefaultHttpRequest("/private")
-	res, _ = doHttpRequest(req, nil)
+	res, _ = doHttpRequest(req, nil, logger)
 	assert.Equal(200, res.StatusCode, "request matching allow rule should be allowed")
 
 	req = newDefaultHttpRequest("/private/path")
-	res, _ = doHttpRequest(req, nil)
+	res, _ = doHttpRequest(req, nil, logger)
 	assert.Equal(200, res.StatusCode, "request matching allow rule should be allowed")
 }
 
@@ -507,15 +523,16 @@ func TestServerRouteQuery(t *testing.T) {
 			Rule:   "Query(`q=test123`)",
 		},
 	}
+	logger := log.NewDefaultLogger()
 
 	// Should block any request
 	req := newHTTPRequest("GET", "https://example.com/?q=no")
-	res, _ := doHttpRequest(req, nil)
+	res, _ := doHttpRequest(req, nil, logger)
 	assert.Equal(307, res.StatusCode, "request not matching any rule should require auth")
 
 	// Should allow matching request
 	req = newHTTPRequest("GET", "https://api.example.com/?q=test123")
-	res, _ = doHttpRequest(req, nil)
+	res, _ = doHttpRequest(req, nil, logger)
 	assert.Equal(200, res.StatusCode, "request matching allow rule should be allowed")
 }
 
@@ -562,7 +579,7 @@ func NewFailingOAuthServer(t *testing.T) (*httptest.Server, *url.URL) {
 	return server, serverURL
 }
 
-func doHttpRequest(r *http.Request, c *http.Cookie) (*http.Response, string) {
+func doHttpRequest(r *http.Request, c *http.Cookie, log *logrus.Logger) (*http.Response, string) {
 	w := httptest.NewRecorder()
 
 	// Set cookies on recorder
@@ -575,7 +592,7 @@ func doHttpRequest(r *http.Request, c *http.Cookie) (*http.Response, string) {
 		r.Header.Add("Cookie", c)
 	}
 
-	NewServer(log.NewDefaultLogger()).RootHandler(w, r)
+	NewServer(log).RootHandler(w, r)
 
 	res := w.Result()
 	body, _ := io.ReadAll(res.Body)
@@ -600,7 +617,6 @@ func newDefaultConfig() *Config {
 	return config
 }
 
-// TODO: replace with newHTTPRequest("GET", "http://example.com/"+uri)
 func newDefaultHttpRequest(uri string) *http.Request {
 	return newHTTPRequest("GET", "http://example.com"+uri)
 }
