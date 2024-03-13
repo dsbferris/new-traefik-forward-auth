@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/dsbferris/traefik-forward-auth/appconfig"
-	"github.com/dsbferris/traefik-forward-auth/log"
+	"github.com/dsbferris/traefik-forward-auth/logging"
 	"github.com/dsbferris/traefik-forward-auth/types"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -27,7 +27,7 @@ import (
 func TestServerRootHandler(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	// X-Forwarded headers should be read into request
 	req := httptest.NewRequest("POST", "http://should-use-x-forwarded.com/should?ignore=me", nil)
@@ -111,7 +111,7 @@ func TestServerAuthHandlerInvalid(t *testing.T) {
 func TestServerAuthHandlerExpired(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 	config.Lifetime = time.Second * time.Duration(-1)
 	config.Domains = []string{"test.com"}
 
@@ -140,7 +140,7 @@ func TestServerAuthHandlerExpired(t *testing.T) {
 func TestServerAuthHandlerValid(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
 	c := MakeCookie(req, "test@example.com")
@@ -158,7 +158,7 @@ func TestServerAuthHandlerValid(t *testing.T) {
 func TestServerAuthHandlerTrustedIP_trusted(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
@@ -171,7 +171,7 @@ func TestServerAuthHandlerTrustedIP_trusted(t *testing.T) {
 func TestServerAuthHandlerTrustedIP_notTrusted(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
@@ -184,7 +184,7 @@ func TestServerAuthHandlerTrustedIP_notTrusted(t *testing.T) {
 func TestServerAuthHandlerTrustedIP_invalidAddress(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
@@ -198,7 +198,7 @@ func TestServerAuthCallback(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 	config = newDefaultConfig()
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	// Setup OAuth server
 	server, serverURL := NewOAuthServer(t)
@@ -247,7 +247,7 @@ func TestServerAuthCallback(t *testing.T) {
 func TestServerAuthCallbackExchangeFailure(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	// Setup OAuth server
 	server, serverURL := NewFailingOAuthServer(t)
@@ -273,7 +273,7 @@ func TestServerAuthCallbackExchangeFailure(t *testing.T) {
 func TestServerAuthCallbackUserFailure(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	// Setup OAuth server
 	server, serverURL := NewOAuthServer(t)
@@ -302,7 +302,7 @@ func TestServerLogout(t *testing.T) {
 	require := require.New(t)
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	req := newDefaultHttpRequest("/_oauth/logout")
 	res, _ := doHttpRequest(req, nil, logger)
@@ -344,7 +344,7 @@ func TestServerLogout(t *testing.T) {
 func TestServerDefaultAction(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	req := newDefaultHttpRequest("/random")
 	res, _ := doHttpRequest(req, nil, logger)
@@ -359,7 +359,7 @@ func TestServerDefaultAction(t *testing.T) {
 func TestServerDefaultProvider(t *testing.T) {
 	assert := assert.New(t)
 	config = newDefaultConfig()
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	// Should use "google" as default provider when not specified
 	req := newDefaultHttpRequest("/random")
@@ -397,7 +397,7 @@ func TestServerRouteHeaders(t *testing.T) {
 			Rule:   "HeadersRegexp(`X-Test`, `test(456|789)`)",
 		},
 	}
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	// Should block any request
 	req := newDefaultHttpRequest("/random")
@@ -431,7 +431,7 @@ func TestServerRouteHost(t *testing.T) {
 			Rule:   "HostRegexp(`sub{num:[0-9]}.example.com`)",
 		},
 	}
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	// Should block any request
 	req := newHTTPRequest("GET", "https://example.com/")
@@ -458,7 +458,7 @@ func TestServerRouteMethod(t *testing.T) {
 			Rule:   "Method(`PUT`)",
 		},
 	}
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	// Should block any request
 	req := newHTTPRequest("GET", "https://example.com/")
@@ -484,7 +484,7 @@ func TestServerRoutePath(t *testing.T) {
 			Rule:   "PathPrefix(`/private`)",
 		},
 	}
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	// Should block any request
 	req := newDefaultHttpRequest("/random")
@@ -515,7 +515,7 @@ func TestServerRouteQuery(t *testing.T) {
 			Rule:   "Query(`q=test123`)",
 		},
 	}
-	logger := log.NewDefaultLogger()
+	logger := logging.NewDefaultLogger()
 
 	// Should block any request
 	req := newHTTPRequest("GET", "https://example.com/?q=no")
@@ -596,7 +596,7 @@ func doHttpRequest(r *http.Request, c *http.Cookie, log *logrus.Logger) (*http.R
 	return res, string(body)
 }
 
-func newDefaultConfig() *appconfig.Config {
+func newDefaultConfig() *appconfig.AppConfig {
 	config, _ = appconfig.NewConfig([]string{
 		"--providers.google.client-id=id",
 		"--providers.google.client-secret=secret",

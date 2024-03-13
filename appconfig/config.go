@@ -17,15 +17,15 @@ import (
 	"github.com/dsbferris/traefik-forward-auth/types"
 )
 
-var config *Config
+var config *AppConfig
 
-// Config holds the runtime application appconfig
-type Config struct {
+// AppConfig holds the runtime application appconfig
+type AppConfig struct {
 	LogLevel  string `long:"log-level" env:"LOG_LEVEL" default:"warn" choice:"trace" choice:"debug" choice:"info" choice:"warn" choice:"error" choice:"fatal" choice:"panic" description:"Log level"`
 	LogFormat string `long:"log-format"  env:"LOG_FORMAT" default:"text" choice:"text" choice:"json" choice:"pretty" description:"Log format"`
 
 	AuthHost               string                   `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
-	Config                 func(s string) error     `long:"appconfig" env:"CONFIG" description:"Path to appconfig file" json:"-"`
+	Config                 func(s string) error     `long:"config" env:"CONFIG" description:"Path to appconfig file" json:"-"`
 	CookieDomains          types.CookieDomains      `long:"cookie-domain" env:"COOKIE_DOMAIN" env-delim:"," description:"Domain to set auth cookie on, can be set multiple times"`
 	InsecureCookie         bool                     `long:"insecure-cookie" env:"INSECURE_COOKIE" description:"Use insecure cookies"`
 	CookieName             string                   `long:"cookie-name" env:"COOKIE_NAME" default:"_forward_auth" description:"Cookie Name"`
@@ -57,7 +57,7 @@ type Config struct {
 }
 
 // NewGlobalConfig creates a new global appconfig, parsed from command arguments
-func NewGlobalConfig() *Config {
+func NewGlobalConfig() *AppConfig {
 	var err error
 	config, err = NewConfig(os.Args[1:])
 	if err != nil {
@@ -71,8 +71,8 @@ func NewGlobalConfig() *Config {
 // TODO: move appconfig parsing into new func "NewParsedConfig"
 
 // NewConfig parses and validates provided configuration into a appconfig object
-func NewConfig(args []string) (*Config, error) {
-	c := &Config{
+func NewConfig(args []string) (*AppConfig, error) {
+	c := &AppConfig{
 		Rules: map[string]*types.Rule{},
 	}
 
@@ -108,7 +108,7 @@ func NewConfig(args []string) (*Config, error) {
 	return c, nil
 }
 
-func (c *Config) parseTrustedNetworks() error {
+func (c *AppConfig) parseTrustedNetworks() error {
 	c.trustedIPNetworks = make([]*net.IPNet, len(c.TrustedIPAddresses))
 
 	for i := range c.TrustedIPAddresses {
@@ -136,7 +136,7 @@ func (c *Config) parseTrustedNetworks() error {
 	return nil
 }
 
-func (c *Config) parseFlags(args []string) error {
+func (c *AppConfig) parseFlags(args []string) error {
 	p := flags.NewParser(c, flags.Default|flags.IniUnknownOptionHandler)
 	p.UnknownOptionHandler = c.parseUnknownFlag
 
@@ -154,7 +154,7 @@ func (c *Config) parseFlags(args []string) error {
 	return nil
 }
 
-func (c *Config) parseUnknownFlag(option string, arg flags.SplitArgument, args []string) ([]string, error) {
+func (c *AppConfig) parseUnknownFlag(option string, arg flags.SplitArgument, args []string) ([]string, error) {
 	// Parse rules in the format "rule.<name>.<param>"
 	parts := strings.Split(option, ".")
 	if len(parts) == 3 && parts[0] == "rule" {
@@ -229,7 +229,7 @@ func handleFlagError(err error) error {
 }
 
 // Validate validates a appconfig object
-func ValidateConfig(c *Config, log *logrus.Logger) {
+func ValidateConfig(c *AppConfig, log *logrus.Logger) {
 	// Check for show stopper errors
 	if len(c.Secret) == 0 {
 		log.Fatal("\"secret\" option must be set")
@@ -254,13 +254,13 @@ func ValidateConfig(c *Config, log *logrus.Logger) {
 	}
 }
 
-func (c Config) String() string {
+func (c AppConfig) String() string {
 	jsonConf, _ := json.Marshal(c)
 	return string(jsonConf)
 }
 
 // GetProvider returns the provider of the given name
-func (c *Config) GetProvider(name string) (provider.Provider, error) {
+func (c *AppConfig) GetProvider(name string) (provider.Provider, error) {
 	switch name {
 	case "google":
 		return &c.Providers.Google, nil
@@ -275,7 +275,7 @@ func (c *Config) GetProvider(name string) (provider.Provider, error) {
 
 // GetConfiguredProvider returns the provider of the given name, if it has been
 // configured. Returns an error if the provider is unknown, or hasn't been configured
-func (c *Config) GetConfiguredProvider(name string) (provider.Provider, error) {
+func (c *AppConfig) GetConfiguredProvider(name string) (provider.Provider, error) {
 	// Check the provider has been configured
 	if !c.providerConfigured(name) {
 		return nil, fmt.Errorf("Unconfigured provider: %s", name)
@@ -284,7 +284,7 @@ func (c *Config) GetConfiguredProvider(name string) (provider.Provider, error) {
 	return c.GetProvider(name)
 }
 
-func (c *Config) IsIPAddressAuthenticated(address string) (bool, error) {
+func (c *AppConfig) IsIPAddressAuthenticated(address string) (bool, error) {
 	addr := net.ParseIP(address)
 	if addr == nil {
 		return false, fmt.Errorf("invalid ip address: '%s'", address)
@@ -299,7 +299,7 @@ func (c *Config) IsIPAddressAuthenticated(address string) (bool, error) {
 	return false, nil
 }
 
-func (c *Config) providerConfigured(name string) bool {
+func (c *AppConfig) providerConfigured(name string) bool {
 	// Check default provider
 	if name == c.DefaultProvider {
 		return true
@@ -315,7 +315,7 @@ func (c *Config) providerConfigured(name string) bool {
 	return false
 }
 
-func (c *Config) setupProvider(name string) error {
+func (c *AppConfig) setupProvider(name string) error {
 	// Check provider exists
 	p, err := c.GetProvider(name)
 	if err != nil {
