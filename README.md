@@ -1,5 +1,9 @@
 
-# Traefik Forward Auth
+# NTFA (New Traefik Forward Auth)
+Got some ideas to simplify and improve Traefik Forward Auth.
+
+
+# From before
 
 A minimal forward authentication service that provides OAuth/SSO login and authentication for the [traefik](https://github.com/containous/traefik) reverse proxy/load balancer.
 
