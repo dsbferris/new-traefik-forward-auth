@@ -15,8 +15,7 @@ func main() {
 
 	config.Validate(logger)
 
-	tfa.SetConfig(config)
-	server := tfa.NewServer(logger)
+	server := tfa.NewServer(logger, config)
 
 	// Attach router to default server
 	http.HandleFunc("/", server.RootHandler)
