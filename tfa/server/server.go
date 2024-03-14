@@ -1,4 +1,4 @@
-package tfa
+package server
 
 import (
 	"errors"
@@ -11,9 +11,9 @@ import (
 
 	mux "github.com/traefik/traefik/v2/pkg/muxer/http"
 
-	"github.com/dsbferris/traefik-forward-auth/appconfig"
-	"github.com/dsbferris/traefik-forward-auth/provider"
+	"github.com/dsbferris/traefik-forward-auth/tfa/appconfig"
 	"github.com/dsbferris/traefik-forward-auth/tfa/auth"
+	"github.com/dsbferris/traefik-forward-auth/tfa/provider"
 )
 
 // Server contains router and handler methods

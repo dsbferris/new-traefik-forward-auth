@@ -3,10 +3,11 @@ package appconfig
 import (
 	// "fmt"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/dsbferris/traefik-forward-auth/types"
+	"github.com/dsbferris/traefik-forward-auth/tfa/types"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -131,9 +132,11 @@ func TestConfigCommaSeperated(t *testing.T) {
 
 func TestConfigParseIni(t *testing.T) {
 	assert := assert.New(t)
+	configFile1, _ := filepath.Abs("../../testfiles/config0")
+	configFile2, _ := filepath.Abs("../../testfiles/config1")
 	c, err := NewConfig([]string{
-		"--config=../testfiles/config0",
-		"--config=../testfiles/config1",
+		"--config=" + configFile1,
+		"--config=" + configFile2,
 		"--csrf-cookie-name=csrfcookiename",
 	})
 	require.Nil(t, err)

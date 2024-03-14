@@ -1,4 +1,4 @@
-package tfa
+package server
 
 import (
 	"fmt"
@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dsbferris/traefik-forward-auth/appconfig"
-	"github.com/dsbferris/traefik-forward-auth/logging"
+	"github.com/dsbferris/traefik-forward-auth/tfa/appconfig"
 	"github.com/dsbferris/traefik-forward-auth/tfa/auth"
-	"github.com/dsbferris/traefik-forward-auth/types"
+	"github.com/dsbferris/traefik-forward-auth/tfa/logging"
+	"github.com/dsbferris/traefik-forward-auth/tfa/types"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"

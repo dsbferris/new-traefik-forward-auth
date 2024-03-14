@@ -1,15 +1,14 @@
-package types_test
+package types
 
 import (
 	"testing"
 
-	"github.com/dsbferris/traefik-forward-auth/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAuthCookieDomainMatch(t *testing.T) {
 	assert := assert.New(t)
-	cd := types.NewCookieDomain("example.com")
+	cd := NewCookieDomain("example.com")
 
 	// Exact should match
 	assert.True(cd.Match("example.com"), "exact domain should match")
@@ -28,18 +27,18 @@ func TestAuthCookieDomainMatch(t *testing.T) {
 
 func TestAuthCookieDomains(t *testing.T) {
 	assert := assert.New(t)
-	cds := types.CookieDomains{}
+	cds := CookieDomains{}
 
 	err := cds.UnmarshalFlag("one.com,two.org")
 	assert.Nil(err)
-	expected := types.CookieDomains{
-		types.CookieDomain{
+	expected := CookieDomains{
+		CookieDomain{
 			Domain:       "one.com",
 			DomainLen:    7,
 			SubDomain:    ".one.com",
 			SubDomainLen: 8,
 		},
-		types.CookieDomain{
+		CookieDomain{
 			Domain:       "two.org",
 			DomainLen:    7,
 			SubDomain:    ".two.org",

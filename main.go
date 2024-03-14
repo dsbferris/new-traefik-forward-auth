@@ -4,23 +4,23 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dsbferris/traefik-forward-auth/appconfig"
-	"github.com/dsbferris/traefik-forward-auth/logging"
-	"github.com/dsbferris/traefik-forward-auth/tfa"
+	"github.com/dsbferris/traefik-forward-auth/tfa/appconfig"
+	"github.com/dsbferris/traefik-forward-auth/tfa/logging"
+	"github.com/dsbferris/traefik-forward-auth/tfa/server"
 )
 
 func main() {
-	config := appconfig.NewGlobalConfig()
-	logger := logging.NewLogger(config.LogFormat, config.LogLevel)
+	c := appconfig.NewGlobalConfig()
+	l := logging.NewLogger(c.LogFormat, c.LogLevel)
 
-	config.Validate(logger)
+	c.Validate(l)
 
-	server := tfa.NewServer(logger, config)
+	s := server.NewServer(l, c)
 
 	// Attach router to default server
-	http.HandleFunc("/", server.RootHandler)
+	http.HandleFunc("/", s.RootHandler)
 
-	logger.WithField("config", config).Debug("Starting with config")
-	logger.Infof("Listening on :%d", config.Port)
-	logger.Info(http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil))
+	l.WithField("config", c).Debug("Starting with config")
+	l.Infof("Listening on :%d", c.Port)
+	l.Info(http.ListenAndServe(fmt.Sprintf(":%d", c.Port), nil))
 }
