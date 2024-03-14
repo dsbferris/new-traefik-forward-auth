@@ -11,7 +11,7 @@ import (
 
 func main() {
 	config := appconfig.NewGlobalConfig()
-	logger := logging.NewDefaultLogger()
+	logger := logging.NewLogger(config.LogFormat, config.LogLevel)
 
 	config.Validate(logger)
 
