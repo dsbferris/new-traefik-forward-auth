@@ -36,7 +36,7 @@ push:
 		-t ghcr.io/dsbferris/traefik-forward-auth:$(VERSION) \
 		. 
 	git tag $(VERSION)
-	git push --tags
+	git push origin $(VERSION)
 
 delete-push:
 	git tag -d $(VERSION)
