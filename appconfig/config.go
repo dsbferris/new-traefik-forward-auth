@@ -229,7 +229,7 @@ func handleFlagError(err error) error {
 }
 
 // Validate validates a appconfig object
-func ValidateConfig(c *AppConfig, log *logrus.Logger) {
+func (c *AppConfig) Validate(log *logrus.Logger) {
 	// Check for show stopper errors
 	if len(c.Secret) == 0 {
 		log.Fatal("\"secret\" option must be set")

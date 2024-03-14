@@ -13,7 +13,7 @@ func main() {
 	config := appconfig.NewGlobalConfig()
 	logger := logging.NewDefaultLogger()
 
-	appconfig.ValidateConfig(config, logger)
+	config.Validate(logger)
 
 	tfa.SetConfig(config)
 	server := tfa.NewServer(logger)

@@ -211,7 +211,7 @@ func TestConfigValidate(t *testing.T) {
 	c, _ := NewConfig([]string{
 		"--rule.1.action=bad",
 	})
-	ValidateConfig(c, log)
+	c.Validate(log)
 
 	logs := hook.AllEntries()
 	assert.Len(logs, 3)
@@ -238,7 +238,7 @@ func TestConfigValidate(t *testing.T) {
 		"--rule.1.action=auth",
 		"--rule.1.provider=bad2",
 	})
-	ValidateConfig(c, log)
+	c.Validate(log)
 
 	logs = hook.AllEntries()
 	assert.Len(logs, 1)
