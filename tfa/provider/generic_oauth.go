@@ -6,17 +6,18 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/dsbferris/traefik-forward-auth/types"
 	"golang.org/x/oauth2"
 )
 
 // GenericOAuth provider
 type GenericOAuth struct {
-	AuthURL      string `long:"auth-url" env:"AUTH_URL" description:"Auth/Login URL"`
-	TokenURL     string `long:"token-url" env:"TOKEN_URL" description:"Token URL"`
-	UserURL      string `long:"user-url" env:"USER_URL" description:"URL used to retrieve user info"`
-	ClientID     string `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
-	ClientSecret string `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
-	TokenStyle   string `long:"token-style" env:"TOKEN_STYLE" default:"header" choice:"header" choice:"query" description:"How token is presented when querying the User URL"`
+	AuthURL      string           `long:"auth-url" env:"AUTH_URL" description:"Auth/Login URL"`
+	TokenURL     string           `long:"token-url" env:"TOKEN_URL" description:"Token URL"`
+	UserURL      string           `long:"user-url" env:"USER_URL" description:"URL used to retrieve user info"`
+	ClientID     string           `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
+	ClientSecret string           `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
+	TokenStyle   types.TokenStyle `long:"token-style" env:"TOKEN_STYLE" default:"header" choice:"header" choice:"query" description:"How token is presented when querying the User URL"`
 
 	OAuthProvider
 }
@@ -71,12 +72,14 @@ func (o *GenericOAuth) GetUser(token, UserPath string) (string, error) {
 		return "", err
 	}
 
-	if o.TokenStyle == "header" {
+	if o.TokenStyle == types.HEADER {
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	} else if o.TokenStyle == "query" {
+	} else if o.TokenStyle == types.QUERY {
 		q := req.URL.Query()
 		q.Add("access_token", token)
 		req.URL.RawQuery = q.Encode()
+	} else {
+		return "", fmt.Errorf("unkown token style")
 	}
 
 	client := &http.Client{}
