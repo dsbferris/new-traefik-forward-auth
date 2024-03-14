@@ -10,11 +10,13 @@ import (
 	"golang.org/x/oauth2"
 )
 
+var ErrInvalidSetup error = errors.New("providers.generic-oauth.auth-url, providers.generic-oauth.token-url, providers.generic-oauth.user-url, providers.generic-oauth.client-id, providers.generic-oauth.client-secret, providers.generic-oauth.token-style must be set")
+
 // GenericOAuth provider
 type GenericOAuth struct {
-	AuthURL      string           `long:"auth-url" env:"AUTH_URL" description:"Auth/Login URL"`
-	TokenURL     string           `long:"token-url" env:"TOKEN_URL" description:"Token URL"`
-	UserURL      string           `long:"user-url" env:"USER_URL" description:"URL used to retrieve user info"`
+	AuthURL      types.Url        `long:"auth-url" env:"AUTH_URL" description:"Auth/Login URL"`
+	TokenURL     types.Url        `long:"token-url" env:"TOKEN_URL" description:"Token URL"`
+	UserURL      types.Url        `long:"user-url" env:"USER_URL" description:"URL used to retrieve user info"`
 	ClientID     string           `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
 	ClientSecret string           `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
 	TokenStyle   types.TokenStyle `long:"token-style" env:"TOKEN_STYLE" default:"header" choice:"header" choice:"query" description:"How token is presented when querying the User URL"`
@@ -30,8 +32,13 @@ func (o *GenericOAuth) Name() string {
 // Setup performs validation and setup
 func (o *GenericOAuth) Setup() error {
 	// Check parmas
-	if o.AuthURL == "" || o.TokenURL == "" || o.UserURL == "" || o.ClientID == "" || o.ClientSecret == "" {
-		return errors.New("providers.generic-oauth.auth-url, providers.generic-oauth.token-url, providers.generic-oauth.user-url, providers.generic-oauth.client-id, providers.generic-oauth.client-secret must be set")
+	if o.AuthURL.String() == "" ||
+		o.TokenURL.String() == "" ||
+		o.UserURL.String() == "" ||
+		o.ClientID == "" ||
+		o.ClientSecret == "" ||
+		o.TokenStyle.String() == "" {
+		return ErrInvalidSetup
 	}
 
 	// Create oauth2 config
@@ -39,8 +46,8 @@ func (o *GenericOAuth) Setup() error {
 		ClientID:     o.ClientID,
 		ClientSecret: o.ClientSecret,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  o.AuthURL,
-			TokenURL: o.TokenURL,
+			AuthURL:  o.AuthURL.String(),
+			TokenURL: o.TokenURL.String(),
 		},
 		Scopes: o.Scopes,
 	}
@@ -67,7 +74,7 @@ func (o *GenericOAuth) ExchangeCode(redirectURI, code string) (string, error) {
 
 // GetUser uses the given token and returns a UserID
 func (o *GenericOAuth) GetUser(token, UserPath string) (string, error) {
-	req, err := http.NewRequest("GET", o.UserURL, nil)
+	req, err := http.NewRequest("GET", o.UserURL.String(), nil)
 	if err != nil {
 		return "", err
 	}
@@ -79,7 +86,7 @@ func (o *GenericOAuth) GetUser(token, UserPath string) (string, error) {
 		q.Add("access_token", token)
 		req.URL.RawQuery = q.Encode()
 	} else {
-		return "", fmt.Errorf("unkown token style")
+		return "", fmt.Errorf("unkown token style: %s", o.TokenStyle.String())
 	}
 
 	client := &http.Client{}

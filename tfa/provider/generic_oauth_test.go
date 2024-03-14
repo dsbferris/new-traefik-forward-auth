@@ -4,11 +4,18 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/dsbferris/traefik-forward-auth/types"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
 )
 
 // Tests
+
+const (
+	providerAuthUrl  = "https://provider.com/oauth2/auth"
+	providerTokenUrl = "https://provider.com/oauth2/token"
+	providerUserUrl  = "https://provider.com/oauth2/user"
+)
 
 func TestGenericOAuthName(t *testing.T) {
 	p := GenericOAuth{}
@@ -22,16 +29,19 @@ func TestGenericOAuthSetup(t *testing.T) {
 	// Check validation
 	err := p.Setup()
 	if assert.Error(err) {
-		assert.Equal("providers.generic-oauth.auth-url, providers.generic-oauth.token-url, providers.generic-oauth.user-url, providers.generic-oauth.client-id, providers.generic-oauth.client-secret must be set", err.Error())
+		assert.Equal(ErrInvalidSetup, err)
 	}
-
+	authUrl, _ := url.Parse(providerAuthUrl)
+	tokenUrl, _ := url.Parse(providerTokenUrl)
+	userUrl, _ := url.Parse(providerUserUrl)
 	// Check setup
 	p = GenericOAuth{
-		AuthURL:      "https://provider.com/oauth2/auth",
-		TokenURL:     "https://provider.com/oauth2/token",
-		UserURL:      "https://provider.com/oauth2/user",
+		AuthURL:      types.Url(*authUrl),
+		TokenURL:     types.Url(*tokenUrl),
+		UserURL:      types.Url(*userUrl),
 		ClientID:     "id",
 		ClientSecret: "secret",
+		TokenStyle:   types.HEADER,
 	}
 	err = p.Setup()
 	assert.Nil(err)
@@ -39,12 +49,16 @@ func TestGenericOAuthSetup(t *testing.T) {
 
 func TestGenericOAuthGetLoginURL(t *testing.T) {
 	assert := assert.New(t)
+	authUrl, _ := url.Parse(providerAuthUrl)
+	tokenUrl, _ := url.Parse(providerTokenUrl)
+	userUrl, _ := url.Parse(providerUserUrl)
 	p := GenericOAuth{
-		AuthURL:      "https://provider.com/oauth2/auth",
-		TokenURL:     "https://provider.com/oauth2/token",
-		UserURL:      "https://provider.com/oauth2/user",
+		AuthURL:      types.Url(*authUrl),
+		TokenURL:     types.Url(*tokenUrl),
+		UserURL:      types.Url(*userUrl),
 		ClientID:     "idtest",
 		ClientSecret: "secret",
+		TokenStyle:   types.HEADER,
 		OAuthProvider: OAuthProvider{
 			Scopes: []string{"scopetest"},
 		},
@@ -88,14 +102,17 @@ func TestGenericOAuthExchangeCode(t *testing.T) {
 		"token": expected.Encode(),
 	})
 	defer server.Close()
-
+	authUrl, _ := url.Parse(providerAuthUrl)
+	tokenUrl, _ := url.Parse(serverURL.String() + "/token")
+	userUrl, _ := url.Parse(providerUserUrl)
 	// Setup provider
 	p := GenericOAuth{
-		AuthURL:      "https://provider.com/oauth2/auth",
-		TokenURL:     serverURL.String() + "/token",
-		UserURL:      "https://provider.com/oauth2/user",
+		AuthURL:      types.Url(*authUrl),
+		TokenURL:     types.Url(*tokenUrl),
+		UserURL:      types.Url(*userUrl),
 		ClientID:     "idtest",
 		ClientSecret: "sectest",
+		TokenStyle:   types.HEADER,
 	}
 	err := p.Setup()
 	if err != nil {
@@ -117,14 +134,17 @@ func TestGenericOAuthGetUser(t *testing.T) {
 	// Setup server
 	server, serverURL := NewOAuthServer(t, nil)
 	defer server.Close()
-
+	authUrl, _ := url.Parse(providerAuthUrl)
+	tokenUrl, _ := url.Parse(providerTokenUrl)
+	userUrl, _ := url.Parse(serverURL.String() + "/userinfo")
 	// Setup provider
 	p := GenericOAuth{
-		AuthURL:      "https://provider.com/oauth2/auth",
-		TokenURL:     "https://provider.com/oauth2/token",
-		UserURL:      serverURL.String() + "/userinfo",
+		AuthURL:      types.Url(*authUrl),
+		TokenURL:     types.Url(*tokenUrl),
+		UserURL:      types.Url(*userUrl),
 		ClientID:     "idtest",
 		ClientSecret: "sectest",
+		TokenStyle:   types.HEADER,
 	}
 	err := p.Setup()
 	if err != nil {

@@ -427,7 +427,8 @@ func TestAuthValidateRedirect(t *testing.T) {
 		assert := assert.New(t)
 		config, _ := appconfig.NewConfig([]string{""})
 
-		config.AuthHost = "auth.example.com"
+		authHost, _ := url.Parse("auth.example.com")
+		config.AuthHost = types.Url(*authHost)
 		config.CookieDomains = types.CookieDomains{*types.NewCookieDomain("example.com")}
 		a := NewAuth(config)
 		newRedirectRequest := func(urlStr string) *http.Request {
@@ -505,7 +506,8 @@ func TestRedirectUri(t *testing.T) {
 	})
 	t.Run("redirect uri auth host no cookie domain", func(t *testing.T) {
 		config, _ := appconfig.NewConfig([]string{""})
-		config.AuthHost = "auth.example.com"
+		authHost, _ := url.Parse("auth.example.com")
+		config.AuthHost = types.Url(*authHost)
 		a := NewAuth(config)
 		// With Auth URL but no matching cookie domain
 		// - will not use auth host
@@ -519,7 +521,8 @@ func TestRedirectUri(t *testing.T) {
 	})
 	t.Run("redirect uri auth host", func(t *testing.T) {
 		config, _ := appconfig.NewConfig([]string{""})
-		config.AuthHost = "auth.example.com"
+		authHost, _ := url.Parse("auth.example.com")
+		config.AuthHost = types.Url(*authHost)
 		config.CookieDomains = types.CookieDomains{*types.NewCookieDomain("example.com")}
 		a := NewAuth(config)
 		// With correct Auth URL + cookie domain
@@ -535,7 +538,8 @@ func TestRedirectUri(t *testing.T) {
 
 	t.Run("redirect uri auth host cookie different domain", func(t *testing.T) {
 		config, _ := appconfig.NewConfig([]string{""})
-		config.AuthHost = "auth.example.com"
+		authHost, _ := url.Parse("auth.example.com")
+		config.AuthHost = types.Url(*authHost)
 		config.CookieDomains = types.CookieDomains{*types.NewCookieDomain("example.com")}
 		a := NewAuth(config)
 		// With Auth URL + cookie domain, but from different domain
@@ -616,7 +620,8 @@ func TestAuthMakeCSRFCookie(t *testing.T) {
 
 	t.Run("make csrf cookie with cookie domain and auth url", func(t *testing.T) {
 		config, _ := appconfig.NewConfig([]string{""})
-		config.AuthHost = "auth.example.com"
+		authHost, _ := url.Parse("auth.example.com")
+		config.AuthHost = types.Url(*authHost)
 		config.CookieDomains = types.CookieDomains{*types.NewCookieDomain("example.com")}
 		a := NewAuth(config)
 		// With cookie domain and auth url

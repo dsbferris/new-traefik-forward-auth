@@ -265,7 +265,7 @@ func (a *Auth) RedirectUri(r *http.Request) string {
 
 // Should we use auth host + what it is
 func (a *Auth) UseAuthDomain(r *http.Request) (bool, string) {
-	if a.config.AuthHost == "" {
+	if a.config.AuthHost.String() == "" {
 		return false, ""
 	}
 
@@ -273,7 +273,7 @@ func (a *Auth) UseAuthDomain(r *http.Request) (bool, string) {
 	reqMatch, reqHost := a.MatchCookieDomains(r.Host)
 
 	// Do any of the auth hosts match a cookie domain?
-	authMatch, authHost := a.MatchCookieDomains(a.config.AuthHost)
+	authMatch, authHost := a.MatchCookieDomains(a.config.AuthHost.String())
 
 	// We need both to match the same domain
 	return reqMatch && authMatch && reqHost == authHost, reqHost
