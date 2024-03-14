@@ -7,18 +7,19 @@ WORKDIR /app
 
 # No shared libs in distroless
 ENV CGO_ENABLED 0
-
-COPY ./go.* ./
-RUN --mount=type=cache,target=/go/pkg/mod \
-    go mod download
-
-COPY . .
 ARG TARGETOS
 ARG TARGETARCH
 ENV GOOS=$TARGETOS
 ENV GOARCH=$TARGETARCH
+
+COPY ./tfa/go.* ./
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
+
+COPY ./tfa .
+
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
-    go build -o ./traefik-forward-auth -ldflags "-s -w" ./cmd
+    go build -o ./traefik-forward-auth -ldflags "-s -w" .
 
 
 ##################################
