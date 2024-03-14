@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dsbferris/traefik-forward-auth/tfa/types"
+	"github.com/dsbferris/traefik-forward-auth/types"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -132,8 +132,8 @@ func TestConfigCommaSeperated(t *testing.T) {
 
 func TestConfigParseIni(t *testing.T) {
 	assert := assert.New(t)
-	configFile1, _ := filepath.Abs("../../testfiles/config0")
-	configFile2, _ := filepath.Abs("../../testfiles/config1")
+	configFile1, _ := filepath.Abs("../testfiles/config0")
+	configFile2, _ := filepath.Abs("../testfiles/config1")
 	c, err := NewConfig([]string{
 		"--config=" + configFile1,
 		"--config=" + configFile2,

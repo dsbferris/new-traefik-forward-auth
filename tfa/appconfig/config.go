@@ -13,8 +13,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/thomseddon/go-flags"
 
-	"github.com/dsbferris/traefik-forward-auth/tfa/provider"
-	"github.com/dsbferris/traefik-forward-auth/tfa/types"
+	"github.com/dsbferris/traefik-forward-auth/provider"
+	"github.com/dsbferris/traefik-forward-auth/types"
 )
 
 var config *AppConfig
