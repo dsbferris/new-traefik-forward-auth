@@ -1,9 +1,9 @@
 
 format:
-	gofmt -w -s .
+	gofmt -w -s tfa/
 
 test:
-	go test -v ./...
+	go test -v ./tfa/...
 
 
 buildx:
