@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dsbferris/traefik-forward-auth/types"
+	"github.com/dsbferris/new-traefik-forward-auth/types"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"

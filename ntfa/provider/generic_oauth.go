@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dsbferris/traefik-forward-auth/types"
+	"github.com/dsbferris/new-traefik-forward-auth/types"
 	"golang.org/x/oauth2"
 )
 

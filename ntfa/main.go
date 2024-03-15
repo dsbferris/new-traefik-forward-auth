@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dsbferris/traefik-forward-auth/appconfig"
-	"github.com/dsbferris/traefik-forward-auth/logging"
-	"github.com/dsbferris/traefik-forward-auth/server"
+	"github.com/dsbferris/new-traefik-forward-auth/appconfig"
+	"github.com/dsbferris/new-traefik-forward-auth/logging"
+	"github.com/dsbferris/new-traefik-forward-auth/server"
 )
 
 func main() {

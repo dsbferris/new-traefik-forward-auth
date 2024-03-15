@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dsbferris/traefik-forward-auth/appconfig"
-	"github.com/dsbferris/traefik-forward-auth/provider"
-	"github.com/dsbferris/traefik-forward-auth/types"
+	"github.com/dsbferris/new-traefik-forward-auth/appconfig"
+	"github.com/dsbferris/new-traefik-forward-auth/provider"
+	"github.com/dsbferris/new-traefik-forward-auth/types"
 )
 
 // Request Validation

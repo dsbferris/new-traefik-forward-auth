@@ -11,9 +11,9 @@ import (
 
 	mux "github.com/traefik/traefik/v2/pkg/muxer/http"
 
-	"github.com/dsbferris/traefik-forward-auth/appconfig"
-	"github.com/dsbferris/traefik-forward-auth/auth"
-	"github.com/dsbferris/traefik-forward-auth/provider"
+	"github.com/dsbferris/new-traefik-forward-auth/appconfig"
+	"github.com/dsbferris/new-traefik-forward-auth/auth"
+	"github.com/dsbferris/new-traefik-forward-auth/provider"
 )
 
 // Server contains router and handler methods
