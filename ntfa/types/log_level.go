@@ -16,30 +16,33 @@ const (
 )
 
 func (l LogLevel) MarshalText() ([]byte, error) {
-	var ls string
-	switch l {
-	case DEBUG:
-		ls = "debug"
-	case INFO:
-		ls = "info"
-	case WARN:
-		ls = "warn"
-	case ERROR:
-		ls = "error"
-	default:
+	s := l.String()
+	if s == "" {
 		return nil, fmt.Errorf("unkown log format: %d", l)
 	}
-	return []byte(ls), nil
+	return []byte(s), nil
 }
 
 func (l LogLevel) String() string {
-	b, _ := l.MarshalText()
-	return string(b)
+	switch l {
+	case DEBUG:
+		return "debug"
+	case INFO:
+		return "info"
+	case WARN:
+		return "warn"
+	case ERROR:
+		return "error"
+	}
+	return ""
 }
 
 func (l *LogLevel) UnmarshalText(b []byte) error {
-	ll := string(b)
-	switch strings.ToLower(ll) {
+	return l.Set(string(b))
+}
+
+func (l *LogLevel) Set(value string) error {
+	switch strings.ToLower(value) {
 	case "debug":
 		*l = DEBUG
 	case "info":
@@ -49,7 +52,7 @@ func (l *LogLevel) UnmarshalText(b []byte) error {
 	case "error":
 		*l = ERROR
 	default:
-		return fmt.Errorf("unkown log format: %s", ll)
+		return fmt.Errorf("unkown log format: %s", value)
 	}
 	return nil
 }

@@ -3,10 +3,10 @@
 VERSION=$(shell cat VERSION)
 
 format:
-	gofmt -w -s tfa/
+	gofmt -w -s ntfa/
 
 test:
-	go test -v ./tfa/...
+	go test -v ./ntfa/...
 
 
 buildx:

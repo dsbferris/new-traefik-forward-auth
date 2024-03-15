@@ -1,8 +1,6 @@
-module github.com/dsbferris/traefik-forward-auth
+module github.com/dsbferris/new-traefik-forward-auth
 
-go 1.22
-
-toolchain go1.22.1
+go 1.22.1
 
 require (
 	github.com/Jeffail/gabs/v2 v2.7.0

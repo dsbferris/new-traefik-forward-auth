@@ -17,13 +17,13 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 COPY ./tfa .
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
-    go build -o ./traefik-forward-auth .
+    go build -o ./ntfa .
 
 
-ENTRYPOINT ["/app/traefik-forward-auth"]
+ENTRYPOINT ["/app/ntfa"]
 
 
-LABEL org.opencontainers.image.title=traefik-forward-auth
-LABEL org.opencontainers.image.description="Forward authentication service for the Traefik reverse proxy"
+LABEL org.opencontainers.image.title=new-traefik-forward-auth
+LABEL org.opencontainers.image.description="New Forward authentication service for the Traefik reverse proxy"
 LABEL org.opencontainers.image.licenses=MIT
-LABEL org.opencontainers.image.source=https://github.com/dsbferris/traefik-forward-auth
+LABEL org.opencontainers.image.source=https://github.com/dsbferris/new-traefik-forward-auth

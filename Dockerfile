@@ -12,26 +12,26 @@ ARG TARGETARCH
 ENV GOOS=$TARGETOS
 ENV GOARCH=$TARGETARCH
 
-COPY ./tfa/go.* ./
+COPY ./ntfa/go.* ./
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
-COPY ./tfa .
+COPY ./ntfa .
 
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
-    go build -o ./traefik-forward-auth -ldflags "-s -w" .
+    go build -o ./ntfa -ldflags "-s -w" .
 
 
 ##################################
 # Now copy it into our base image.
 FROM gcr.io/distroless/static-debian11:nonroot
 
-COPY --from=build /app/traefik-forward-auth /app/traefik-forward-auth
+COPY --from=build /app/ntfa /app/ntfa
 
-ENTRYPOINT ["/app/traefik-forward-auth"]
+ENTRYPOINT ["/app/ntfa"]
 #CMD []
 
-LABEL org.opencontainers.image.title=traefik-forward-auth
-LABEL org.opencontainers.image.description="Forward authentication service for the Traefik reverse proxy"
+LABEL org.opencontainers.image.title=new-traefik-forward-auth
+LABEL org.opencontainers.image.description="New Forward authentication service for the Traefik reverse proxy"
 LABEL org.opencontainers.image.licenses=MIT
-LABEL org.opencontainers.image.source=https://github.com/dsbferris/traefik-forward-auth
+LABEL org.opencontainers.image.source=https://github.com/dsbferris/new-traefik-forward-auth
