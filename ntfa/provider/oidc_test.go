@@ -1,18 +1,20 @@
 package provider
 
 import (
+	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/rsa"
+	"encoding/json"
+
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strconv"
 	"testing"
 	"time"
 
-	"github.com/go-jose/go-jose/v3"
+	jose "github.com/go-jose/go-jose/v3"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +38,7 @@ func TestOIDCSetup(t *testing.T) {
 func TestOIDCGetLoginURL(t *testing.T) {
 	assert := assert.New(t)
 
-	provider, server, serverURL, _ := setupOIDCTest(t, nil)
+	provider, server, serverURL, _, _ := setupOIDCTest(t, nil)
 	defer server.Close()
 
 	// Check url
@@ -91,7 +93,7 @@ func TestOIDCGetLoginURL(t *testing.T) {
 func TestOIDCExchangeCode(t *testing.T) {
 	assert := assert.New(t)
 
-	provider, server, _, _ := setupOIDCTest(t, map[string]map[string]string{
+	provider, server, _, _, _ := setupOIDCTest(t, map[string]map[string]string{
 		"token": {
 			"code":         "code",
 			"grant_type":   "authorization_code",
@@ -108,25 +110,41 @@ func TestOIDCExchangeCode(t *testing.T) {
 func TestOIDCGetUser(t *testing.T) {
 	assert := assert.New(t)
 
-	provider, server, serverURL, key := setupOIDCTest(t, nil)
+	provider, server, serverURL, _, priv := setupOIDCTest(t, nil)
 	defer server.Close()
 
 	// Generate JWT
-	token := key.sign(t, []byte(`{
-		"iss": "`+serverURL.String()+`",
-		"exp":`+strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10)+`,
-		"aud": "idtest",
-		"sub": "1",
-		"email": "example@example.com",
-		"username": "example",
-		"email_verified": true
-	}`))
+	type customClaims struct {
+		jwt.RegisteredClaims
+		Email         string `json:"email"`
+		Username      string `json:"username"`
+		EmailVerified bool   `json:"email_verified"`
+	}
+	claims := customClaims{
+		Email:         "example@example.com",
+		Username:      "example",
+		EmailVerified: true,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    serverURL.String(),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			Audience:  jwt.ClaimStrings{"idtest"},
+			Subject:   "1",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims, nil)
+	tokenString, err := token.SignedString(priv)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Get username
-	username, err := provider.GetUser(token, "username")
+	username, err := provider.GetUser(tokenString, "username")
 	assert.Nil(err)
 	assert.Equal("example", username)
-	email, err := provider.GetUser(token, "email")
+	email, err := provider.GetUser(tokenString, "email")
 	assert.Nil(err)
 	assert.Equal("example@example.com", email)
 }
@@ -134,27 +152,25 @@ func TestOIDCGetUser(t *testing.T) {
 // Utils
 
 // setOIDCTest creates a key, OIDCServer and initilises an OIDC provider
-func setupOIDCTest(t *testing.T, bodyValues map[string]map[string]string) (*OIDC, *httptest.Server, *url.URL, *rsaKey) {
+func setupOIDCTest(t *testing.T, bodyValues map[string]map[string]string) (*OIDC, *httptest.Server, *url.URL, ed25519.PublicKey, ed25519.PrivateKey) {
 	// Generate key
-	key, err := newRSAKey()
+	pub, priv, err := newEd25519KeyPair()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	body := make(map[string]string)
-	if bodyValues != nil {
-		// URL encode bodyValues into body
-		for method, values := range bodyValues {
-			q := url.Values{}
-			for k, v := range values {
-				q.Set(k, v)
-			}
-			body[method] = q.Encode()
+	// URL encode bodyValues into body
+	for method, values := range bodyValues {
+		q := url.Values{}
+		for k, v := range values {
+			q.Set(k, v)
 		}
+		body[method] = q.Encode()
 	}
 
 	// Set up oidc server
-	server, serverURL := NewOIDCServer(t, key, body)
+	server, serverURL := NewOIDCServerEd25519(t, priv, pub, body)
 
 	// Setup provider
 	p := OIDC{
@@ -172,25 +188,25 @@ func setupOIDCTest(t *testing.T, bodyValues map[string]map[string]string) (*OIDC
 		t.Fatal(err)
 	}
 
-	return &p, server, serverURL, key
+	return &p, server, serverURL, pub, priv
 }
 
-// OIDCServer is used in the OIDC Tests to mock an OIDC server
-type OIDCServer struct {
-	t    *testing.T
-	url  *url.URL
-	body map[string]string // method -> body
-	key  *rsaKey
+type OIDCServerEd25519 struct {
+	t      *testing.T
+	url    *url.URL
+	body   map[string]string // method -> body
+	key    ed25519.PrivateKey
+	pubKey ed25519.PublicKey
 }
 
-func NewOIDCServer(t *testing.T, key *rsaKey, body map[string]string) (*httptest.Server, *url.URL) {
-	handler := &OIDCServer{t: t, key: key, body: body}
+func NewOIDCServerEd25519(t *testing.T, priv ed25519.PrivateKey, pub ed25519.PublicKey, body map[string]string) (*httptest.Server, *url.URL) {
+	handler := &OIDCServerEd25519{t: t, key: priv, pubKey: pub, body: body}
 	server := httptest.NewServer(handler)
 	handler.url, _ = url.Parse(server.URL)
 	return server, handler.url
 }
 
-func (s *OIDCServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *OIDCServerEd25519) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body, _ := io.ReadAll(r.Body)
 
 	if r.URL.Path == "/.well-known/openid-configuration" {
@@ -219,66 +235,28 @@ func (s *OIDCServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	} else if r.URL.Path == "/jwks" {
 		// Key request
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{"keys":[`+s.key.publicJWK(s.t)+`]}`)
+		//pubJwk := s.key.publicJWK(s.t)
+		var jwks struct {
+			Keys []*jose.JSONWebKey `json:"keys"`
+		}
+		jwks.Keys = []*jose.JSONWebKey{
+			{
+				Key: s.pubKey,
+			},
+		}
+		json, err := json.Marshal(jwks)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		//jwks := `{"keys":[` + pubJwk + `]}`
+		w.Write(json)
+		//fmt.Fprint(w, response)
 	} else {
 		s.t.Fatal("Unrecognised request: ", r.URL, string(body))
 	}
 }
 
-// rsaKey is used in the OIDCServer tests to sign and verify requests
-type rsaKey struct {
-	key     *rsa.PrivateKey
-	alg     jose.SignatureAlgorithm
-	jwkPub  *jose.JSONWebKey
-	jwkPriv *jose.JSONWebKey
-}
-
-func newRSAKey() (*rsaKey, error) {
-	key, err := rsa.GenerateKey(rand.Reader, 1028)
-	if err != nil {
-		return nil, err
-	}
-
-	return &rsaKey{
-		key: key,
-		alg: jose.RS256,
-		jwkPub: &jose.JSONWebKey{
-			Key:       key.Public(),
-			Algorithm: string(jose.RS256),
-		},
-		jwkPriv: &jose.JSONWebKey{
-			Key:       key,
-			Algorithm: string(jose.RS256),
-		},
-	}, nil
-}
-
-func (k *rsaKey) publicJWK(t *testing.T) string {
-	b, err := k.jwkPub.MarshalJSON()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return string(b)
-}
-
-// sign creates a JWS using the private key from the provided payload.
-func (k *rsaKey) sign(t *testing.T, payload []byte) string {
-	signer, err := jose.NewSigner(jose.SigningKey{
-		Algorithm: k.alg,
-		Key:       k.key,
-	}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	jws, err := signer.Sign(payload)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	data, err := jws.CompactSerialize()
-	if err != nil {
-		t.Fatal(err)
-	}
-	return data
+func newEd25519KeyPair() (ed25519.PublicKey, ed25519.PrivateKey, error) {
+	return ed25519.GenerateKey(rand.Reader)
 }
