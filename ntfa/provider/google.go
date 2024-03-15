@@ -100,11 +100,12 @@ func (g *Google) GetUser(token, UserPath string) (string, error) {
 	}
 
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	res, err := client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
 
-	defer res.Body.Close()
-	return GetUser(res.Body, UserPath)
+	defer resp.Body.Close()
+
+	return GetUserFromReader(resp.Body, UserPath)
 }

@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -106,6 +105,5 @@ func (o *OIDC) GetUser(token, UserPath string) (string, error) {
 	if err := idToken.Claims(&claims); err != nil {
 		return "", err
 	}
-
-	return GetUser(bytes.NewReader(claims), UserPath)
+	return GetUserFromBytes(claims, UserPath)
 }

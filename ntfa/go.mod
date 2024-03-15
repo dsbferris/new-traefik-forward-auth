@@ -3,12 +3,13 @@ module github.com/dsbferris/new-traefik-forward-auth
 go 1.22.1
 
 require (
-	github.com/Jeffail/gabs/v2 v2.7.0
 	github.com/coreos/go-oidc/v3 v3.9.0
 	github.com/go-jose/go-jose/v3 v3.0.3
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	github.com/thomseddon/go-flags v1.4.1-0.20190507184247-a3629c504486
+	github.com/tidwall/gjson v1.17.1
 	github.com/traefik/traefik/v2 v2.11.0
 	golang.org/x/oauth2 v0.18.0
 )
@@ -22,6 +23,8 @@ require (
 	github.com/miekg/dns v1.1.58 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/traefik/paerser v0.2.0 // indirect
 	github.com/vulcand/predicate v1.2.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect

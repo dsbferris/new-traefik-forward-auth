@@ -90,11 +90,11 @@ func (o *GenericOAuth) GetUser(token, UserPath string) (string, error) {
 	}
 
 	client := &http.Client{}
-	res, err := client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
-	defer res.Body.Close()
+	defer resp.Body.Close()
 
-	return GetUser(res.Body, UserPath)
+	return GetUserFromReader(resp.Body, UserPath)
 }

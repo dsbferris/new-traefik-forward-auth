@@ -1,13 +1,12 @@
 package provider
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 
-	// "net/url"
-
-	"github.com/Jeffail/gabs/v2"
+	"github.com/tidwall/gjson"
 	"golang.org/x/oauth2"
 )
 
@@ -37,17 +36,22 @@ type User struct {
 	Username string `json:"username"`
 }
 
-// GetUser extracts a UserID located at the (dot notation) path (UserPath) in the json io.Reader of the UserURL
-func GetUser(r io.Reader, UserPath string) (string, error) {
-	json, err := gabs.ParseJSONBuffer(r)
+func GetUserFromReader(r io.Reader, UserPath string) (string, error) {
+	var b bytes.Buffer
+	_, err := b.ReadFrom(r)
 	if err != nil {
 		return "", err
 	}
+	return GetUserFromBytes(b.Bytes(), UserPath)
+}
 
-	if !json.ExistsP(UserPath) {
-		return "", fmt.Errorf("no such user path: '%s' in the UserURL response: %s", UserPath, string(json.Bytes()))
+// GetUser extracts a UserID located at the (dot notation) path (UserPath) in the json io.Reader of the UserURL
+func GetUserFromBytes(jsonBytes []byte, UserPath string) (string, error) {
+	gjResult := gjson.GetBytes(jsonBytes, UserPath)
+	if !gjResult.Exists() {
+		return "", fmt.Errorf("no such user path: '%s' in the UserURL response: %s", UserPath, string(jsonBytes))
 	}
-	return fmt.Sprintf("%v", json.Path(UserPath).Data()), nil
+	return gjResult.String(), nil
 }
 
 // OAuthProvider is a provider using the oauth2 library
