@@ -2,22 +2,24 @@ package logging
 
 import (
 	"bytes"
+	"encoding/json"
 	"log/slog"
+	"time"
 
 	"github.com/tidwall/gjson"
 )
 
-const (
-	MESSAGE = "msg"
-	LEVEL   = "level"
-)
-
+// Inspired by Logrus Testing Hook, this is my version for slog.
 type Hook struct {
 	buffer *bytes.Buffer
 	logger *slog.Logger
 }
 
-func NewHookLogger(options *slog.HandlerOptions) (Hook, *slog.Logger) {
+func NewHookLogger(level slog.Level) (Hook, *slog.Logger) {
+	return NewHookLoggerWithOptions(&slog.HandlerOptions{Level: level})
+}
+
+func NewHookLoggerWithOptions(options *slog.HandlerOptions) (Hook, *slog.Logger) {
 	var buf bytes.Buffer
 	handler := slog.NewJSONHandler(&buf, options)
 	logger := slog.New(handler)
@@ -28,17 +30,21 @@ func NewHookLogger(options *slog.HandlerOptions) (Hook, *slog.Logger) {
 	return hook, logger
 }
 
-// Returns chronologically sorted array of []byte of the json messages.
-func (h Hook) Logs() LogEntries {
+func (h Hook) Logs() []Entry {
 	split := bytes.Split(h.buffer.Bytes(), []byte("\n"))
 	// the last element is a lot of times just an empty array.
 	// this is due to how buffer allocates the capacity of the slice.
 	// here we strip the last element if it is empty
-	sl := len(split)
-	if len(split[sl-1]) == 0 {
-		split = split[:sl-1]
+
+	if len(split[len(split)-1]) == 0 {
+		split = split[:len(split)-1]
 	}
-	return LogEntries(split)
+	entries := make([]Entry, len(split))
+	for i, s := range split {
+		json.Unmarshal(s, &entries[i])
+		entries[i].Raw = s
+	}
+	return entries
 }
 
 // Clear the Hooks buffer, aka delete all Log Entries.
@@ -46,18 +52,25 @@ func (h Hook) Reset() {
 	h.buffer.Reset()
 }
 
-type LogEntries [][]byte
-
-func (l LogEntries) Get(index int) LogEntry {
-	return l[index]
+// Entry is a convenience struct containing basic information
+type Entry struct {
+	Time    time.Time  `json:"time"`
+	Level   slog.Level `json:"level"`
+	Message string     `json:"msg"`
+	Error   string     `json:"error"`
+	Raw     json.RawMessage
 }
 
-type LogEntry []byte
-
-func (l LogEntry) Get(path string) gjson.Result {
-	return gjson.GetBytes(l, path)
+// Use Get if you want to get a value from a LogEntry that is not contained within the message.
+// Use the dot notation for that.
+// For more information about dot notation see https://github.com/tidwall/gjson
+func (e Entry) Get(path string) gjson.Result {
+	return gjson.GetBytes(e.Raw, path)
 }
 
-func (l LogEntry) GetMany(paths ...string) []gjson.Result {
-	return gjson.GetManyBytes(l, paths...)
+// GetMany searches json for the multiple paths. The return value is a Result array where the number of items will be equal to the number of input paths.
+// Use the dot notation for that.
+// For more information about dot notation see https://github.com/tidwall/gjson
+func (e Entry) GetMany(paths ...string) []gjson.Result {
+	return gjson.GetManyBytes(e.Raw, paths...)
 }
