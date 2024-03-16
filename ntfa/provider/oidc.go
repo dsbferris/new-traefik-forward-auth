@@ -30,7 +30,10 @@ func (o *OIDC) Name() string {
 // Setup performs validation and setup
 func (o *OIDC) Setup() error {
 	// Check parms
-	if o.IssuerURL.String() == "" || o.ClientID == "" || o.ClientSecret == "" {
+	if o.IssuerURL == nil ||
+		o.IssuerURL.String() == "" ||
+		o.ClientID == "" ||
+		o.ClientSecret == "" {
 		return errors.New("providers.oidc.issuer-url, providers.oidc.client-id, providers.oidc.client-secret must be set")
 	}
 

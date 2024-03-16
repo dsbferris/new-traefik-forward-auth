@@ -33,7 +33,10 @@ func (o *GenericOAuth) Name() string {
 // Setup performs validation and setup
 func (o *GenericOAuth) Setup() error {
 	// Check parmas
-	if o.AuthURL.String() == "" ||
+	if o.AuthURL == nil ||
+		o.TokenURL == nil ||
+		o.UserURL == nil ||
+		o.AuthURL.String() == "" ||
 		o.TokenURL.String() == "" ||
 		o.UserURL.String() == "" ||
 		o.ClientID == "" ||
