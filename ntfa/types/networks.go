@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -8,40 +9,42 @@ import (
 
 type Networks []*net.IPNet
 
-func (networks *Networks) String() string {
+// implements [encoding.TextMarshaler]
+func (n Networks) MarshalText() (value []byte, err error) {
+	return []byte(n.String()), nil
+}
+
+// implements [encoding.TextUnmarshaler]
+func (n *Networks) UnmarshalText(value []byte) error {
+	return n.Set(string(value))
+}
+
+// implements [flag.Value]
+func (n Networks) String() string {
 	sb := strings.Builder{}
-	for i, net := range *networks {
+	for i, net := range n {
 		sb.WriteString(net.String())
-		if i < len(*networks)-1 {
-			sb.WriteString(",")
+		if i < len(n)-1 {
+			sb.WriteByte(',')
 		}
 	}
 	return sb.String()
 }
 
-func (networks *Networks) Set(value string) error {
+// implements [flag.Value]
+func (n *Networks) Set(value string) error {
 	valueList := strings.Split(value, ",")
-	// preallocate size
-	*networks = make(Networks, 0, len(valueList))
-	var n *net.IPNet
-	var err error
-	for _, v := range valueList {
-		if strings.Contains(v, "/") {
-			_, n, err = net.ParseCIDR(v)
-			if err != nil {
-				return err
-			}
-		} else {
-			ipAddr := net.ParseIP(v)
-			if ipAddr == nil {
-				return fmt.Errorf("unable to parse ip address: '%s'", ipAddr)
-			}
-			n = &net.IPNet{
-				IP:   ipAddr,
-				Mask: []byte{255, 255, 255, 255},
-			}
+	networks := make([]*net.IPNet, len(valueList))
+	for i, v := range valueList {
+		if !strings.Contains(v, "/") {
+			v += "/32"
 		}
-		*networks = append(*networks, n)
+		_, net, err := net.ParseCIDR(v)
+		if err != nil {
+			return errors.Join(fmt.Errorf("single ip addresses automatically get /32 added"), err)
+		}
+		networks[i] = net
 	}
+	*n = networks
 	return nil
 }

@@ -13,36 +13,41 @@ const (
 	JSON
 )
 
-func (f LogFormat) MarshalText() ([]byte, error) {
-	var lf string
-	switch f {
+// implements [encoding.TextMarshaler]
+func (l LogFormat) MarshalText() (value []byte, err error) {
+	return []byte(l.String()), nil
+}
+
+// implements [encoding.TextUnmarshaler]
+func (l *LogFormat) UnmarshalText(value []byte) error {
+	return l.Set(string(value))
+}
+
+// implements [flag.Value]
+func (l LogFormat) String() string {
+	switch l {
 	case PRETTY:
-		lf = "pretty"
+		return "pretty"
 	case TEXT:
-		lf = "text"
+		return "text"
 	case JSON:
-		lf = "json"
+		return "json"
 	default:
-		return nil, fmt.Errorf("unkown log format: %d", f)
+		return ""
 	}
-	return []byte(lf), nil
 }
 
-func (f LogFormat) String() string {
-	b, _ := f.MarshalText()
-	return string(b)
-}
-
-func (f *LogFormat) UnmarshalText(b []byte) error {
-	switch strings.ToLower(string(b)) {
+// implements [flag.Value]
+func (l *LogFormat) Set(value string) error {
+	switch strings.ToLower(string(value)) {
 	case "pretty":
-		*f = PRETTY
+		*l = PRETTY
 	case "text":
-		*f = TEXT
+		*l = TEXT
 	case "json":
-		*f = JSON
+		*l = JSON
 	default:
-		return fmt.Errorf("unkown log format: %d", f)
+		return fmt.Errorf("unkown log format: %d", l)
 	}
 	return nil
 }

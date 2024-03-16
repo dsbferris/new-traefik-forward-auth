@@ -7,19 +7,31 @@ import (
 
 type EmailList []*mail.Address
 
-func (emailList *EmailList) String() string {
+// implements [encoding.TextMarshaler]
+func (l EmailList) MarshalText() (value []byte, err error) {
+	return []byte(l.String()), nil
+}
+
+// implements [encoding.TextUnmarshaler]
+func (l *EmailList) UnmarshalText(value []byte) error {
+	return l.Set(string(value))
+}
+
+// implements [flag.Value]
+func (l EmailList) String() string {
 	var sb strings.Builder
-	for i, u := range *emailList {
+	for i, u := range l {
 		sb.WriteString(u.String())
-		if i < len(*emailList)-1 {
-			sb.WriteString(",")
+		if i < len(l)-1 {
+			sb.WriteByte(',')
 		}
 	}
 	return sb.String()
 }
 
-func (emailList *EmailList) Set(value string) error {
+// implements [flag.Value]
+func (l *EmailList) Set(value string) error {
 	var err error
-	*emailList, err = mail.ParseAddressList(value)
+	*l, err = mail.ParseAddressList(value)
 	return err
 }

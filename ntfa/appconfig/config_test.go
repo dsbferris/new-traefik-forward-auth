@@ -172,8 +172,8 @@ func TestConfigParseEnvironment(t *testing.T) {
 	assert.Equal("env_cookie_name", c.CookieName, "variable should be read from environment")
 	assert.Equal("env_client_id", c.Providers.Google.ClientID, "namespace variable should be read from environment")
 	assert.Equal(types.CookieDomains{
-		*types.NewCookieDomain("test1.com"),
-		*types.NewCookieDomain("example.org"),
+		types.NewCookieDomain("test1.com"),
+		types.NewCookieDomain("example.org"),
 	}, c.CookieDomains, "array variable should be read from environment COOKIE_DOMAIN")
 	assert.Equal(types.CommaSeparatedList{"test2.com", "example.org"}, c.Domains, "array variable should be read from environment DOMAIN")
 	assert.Equal(types.CommaSeparatedList{"test3.com", "example.org"}, c.Whitelist, "array variable should be read from environment WHITELIST")

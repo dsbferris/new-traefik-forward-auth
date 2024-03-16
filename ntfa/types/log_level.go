@@ -15,14 +15,17 @@ const (
 	ERROR LogLevel = LogLevel(slog.LevelError)
 )
 
+// implements [encoding.TextMarshaler]
 func (l LogLevel) MarshalText() ([]byte, error) {
-	s := l.String()
-	if s == "" {
-		return nil, fmt.Errorf("unkown log format: %d", l)
-	}
-	return []byte(s), nil
+	return []byte(l.String()), nil
 }
 
+// implements [encoding.TextUnmarshaler]
+func (l *LogLevel) UnmarshalText(b []byte) error {
+	return l.Set(string(b))
+}
+
+// implements [flag.Value]
 func (l LogLevel) String() string {
 	switch l {
 	case DEBUG:
@@ -37,10 +40,7 @@ func (l LogLevel) String() string {
 	return ""
 }
 
-func (l *LogLevel) UnmarshalText(b []byte) error {
-	return l.Set(string(b))
-}
-
+// implements [flag.Value]
 func (l *LogLevel) Set(value string) error {
 	switch strings.ToLower(value) {
 	case "debug":

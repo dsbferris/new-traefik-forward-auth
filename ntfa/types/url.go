@@ -2,52 +2,36 @@ package types
 
 import (
 	"net/url"
-	"strings"
 )
 
-type Url url.URL
-
-func (u Url) String() string {
-	return u.ToURL().String()
+type Url struct {
+	URL *url.URL
 }
 
+// implements [encoding.TextMarshaler]
+func (u Url) MarshalText() (value []byte, err error) {
+	return []byte(u.String()), nil
+}
+
+// implements [encoding.TextUnmarshaler]
+func (u *Url) UnmarshalText(value []byte) error {
+	return u.Set(string(value))
+}
+
+// implements [flag.Value]
+func (u Url) String() string {
+	if u.URL == nil {
+		return ""
+	}
+	return u.URL.String()
+}
+
+// implements [flag.Value]
 func (u *Url) Set(value string) error {
-	p, err := url.Parse(value)
+	url, err := url.Parse(value)
 	if err != nil {
 		return err
 	}
-	*u = Url(*p)
-	return nil
-}
-
-func (u *Url) ToURL() *url.URL {
-	url := url.URL(*u)
-	return &url
-}
-
-type UrlList []*url.URL
-
-func (urlList *UrlList) String() string {
-	var sb strings.Builder
-	for i, u := range *urlList {
-		sb.WriteString(u.String())
-		if i < len(*urlList)-1 {
-			sb.WriteString(",")
-		}
-	}
-	return sb.String()
-}
-
-func (urlList *UrlList) Set(value string) error {
-	valueList := strings.Split(value, ",")
-	// preallocate size
-	*urlList = make(UrlList, 0, len(valueList))
-	for _, s := range valueList {
-		u, err := url.Parse(s)
-		if err != nil {
-			return err
-		}
-		*urlList = append(*urlList, u)
-	}
+	*u = Url{URL: url}
 	return nil
 }

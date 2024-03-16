@@ -12,27 +12,32 @@ const (
 	QUERY  TokenStyle = "query"
 )
 
-func (tokenStyle TokenStyle) MarshalText() ([]byte, error) {
-	return []byte(tokenStyle), nil
+// implements [encoding.TextMarshaler]
+func (t TokenStyle) MarshalText() (value []byte, err error) {
+	return []byte(t), nil
 }
 
-func (tokenStyle TokenStyle) String() string {
-	return string(tokenStyle)
+// implements [encoding.TextUnmarshaler]
+func (t *TokenStyle) UnmarshalText(value []byte) error {
+	return t.Set(string(value))
 }
 
-func (tokenStyle *TokenStyle) Set(value string) error {
-	trimmed := TokenStyle(strings.TrimSpace(value))
-	switch trimmed {
+// implements [flag.Value]
+func (t TokenStyle) String() string {
+	return string(t)
+}
+
+// implements [flag.Value]
+func (t *TokenStyle) Set(value string) error {
+	v := TokenStyle(strings.ToLower(value))
+	switch v {
 	case HEADER:
-		*tokenStyle = trimmed
+		break
 	case QUERY:
-		*tokenStyle = trimmed
+		break
 	default:
-		return fmt.Errorf("tokenstyle must be one of %s, %s: %s", HEADER, QUERY, trimmed)
+		return fmt.Errorf("tokenstyle must be one of %s, %s. got: %s", HEADER, QUERY, v)
 	}
+	*t = v
 	return nil
-}
-
-func (tokenStyle *TokenStyle) UnmarshalText(b []byte) error {
-	return tokenStyle.Set(string(b))
 }
