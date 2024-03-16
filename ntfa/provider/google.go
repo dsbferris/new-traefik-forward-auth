@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/dsbferris/new-traefik-forward-auth/types"
 )
 
 // Google provider
@@ -15,9 +17,9 @@ type Google struct {
 	Scope        string
 	Prompt       string `long:"prompt" env:"PROMPT" default:"select_account" description:"Space separated list of OpenID prompt options"`
 
-	LoginURL *url.URL
-	TokenURL *url.URL
-	UserURL  *url.URL
+	LoginURL *types.Url
+	TokenURL *types.Url
+	UserURL  *types.Url
 }
 
 // Name returns the name of the provider
@@ -33,21 +35,22 @@ func (g *Google) Setup() error {
 
 	// Set static values
 	g.Scope = "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email"
-	g.LoginURL = &url.URL{
-		Scheme: "https",
-		Host:   "accounts.google.com",
-		Path:   "/o/oauth2/auth",
+
+	loginUrl, err := types.ParseUrl("https://accounts.google.com/o/oauth2/auth")
+	if err != nil {
+		return err
 	}
-	g.TokenURL = &url.URL{
-		Scheme: "https",
-		Host:   "www.googleapis.com",
-		Path:   "/oauth2/v3/token",
+	tokenUrl, err := types.ParseUrl("https://www.googleapis.com/oauth2/v3/token")
+	if err != nil {
+		return err
 	}
-	g.UserURL = &url.URL{
-		Scheme: "https",
-		Host:   "www.googleapis.com",
-		Path:   "/oauth2/v2/userinfo",
+	userUrl, err := types.ParseUrl("https://www.googleapis.com/oauth2/v2/userinfo")
+	if err != nil {
+		return err
 	}
+	g.LoginURL = loginUrl
+	g.TokenURL = tokenUrl
+	g.UserURL = userUrl
 
 	return nil
 }
@@ -64,7 +67,7 @@ func (g *Google) GetLoginURL(redirectURI, state string, forcePrompt bool) string
 	q.Set("redirect_uri", redirectURI)
 	q.Set("state", state)
 
-	u := *g.LoginURL
+	u := g.LoginURL.URL
 	u.RawQuery = q.Encode()
 
 	return u.String()

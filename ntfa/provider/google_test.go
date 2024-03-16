@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/dsbferris/new-traefik-forward-auth/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,19 +39,19 @@ func TestGoogleSetup(t *testing.T) {
 		Scheme: "https",
 		Host:   "accounts.google.com",
 		Path:   "/o/oauth2/auth",
-	}, p.LoginURL)
+	}, p.LoginURL.URL)
 
 	assert.Equal(&url.URL{
 		Scheme: "https",
 		Host:   "www.googleapis.com",
 		Path:   "/oauth2/v3/token",
-	}, p.TokenURL)
+	}, p.TokenURL.URL)
 
 	assert.Equal(&url.URL{
 		Scheme: "https",
 		Host:   "www.googleapis.com",
 		Path:   "/oauth2/v2/userinfo",
-	}, p.UserURL)
+	}, p.UserURL.URL)
 }
 
 func TestGoogleGetLoginURL(t *testing.T) {
@@ -60,11 +61,11 @@ func TestGoogleGetLoginURL(t *testing.T) {
 		ClientSecret: "sectest",
 		Scope:        "scopetest",
 		Prompt:       "consent select_account",
-		LoginURL: &url.URL{
+		LoginURL: &types.Url{URL: &url.URL{
 			Scheme: "https",
 			Host:   "google.com",
 			Path:   "/auth",
-		},
+		}},
 	}
 
 	// Check url
@@ -109,11 +110,11 @@ func TestGoogleExchangeCode(t *testing.T) {
 		ClientSecret: "sectest",
 		Scope:        "scopetest",
 		Prompt:       "consent select_account",
-		TokenURL: &url.URL{
+		TokenURL: &types.Url{URL: &url.URL{
 			Scheme: serverURL.Scheme,
 			Host:   serverURL.Host,
 			Path:   "/token",
-		},
+		}},
 	}
 
 	token, err := p.ExchangeCode("http://example.com/_oauth", "code")
@@ -134,11 +135,11 @@ func TestGoogleGetUser(t *testing.T) {
 		ClientSecret: "sectest",
 		Scope:        "scopetest",
 		Prompt:       "consent select_account",
-		UserURL: &url.URL{
+		UserURL: &types.Url{URL: &url.URL{
 			Scheme: serverURL.Scheme,
 			Host:   serverURL.Host,
 			Path:   "/userinfo",
-		},
+		}},
 	}
 
 	user, err := p.GetUser("123456789", "email")

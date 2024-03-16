@@ -6,14 +6,15 @@ import (
 	"errors"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/dsbferris/new-traefik-forward-auth/types"
 	"golang.org/x/oauth2"
 )
 
 // OIDC provider
 type OIDC struct {
-	IssuerURL    string `long:"issuer-url" env:"ISSUER_URL" description:"Issuer URL"`
-	ClientID     string `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
-	ClientSecret string `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
+	IssuerURL    *types.Url `long:"issuer-url" env:"ISSUER_URL" description:"Issuer URL"`
+	ClientID     string     `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
+	ClientSecret string     `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
 
 	OAuthProvider
 
@@ -29,7 +30,7 @@ func (o *OIDC) Name() string {
 // Setup performs validation and setup
 func (o *OIDC) Setup() error {
 	// Check parms
-	if o.IssuerURL == "" || o.ClientID == "" || o.ClientSecret == "" {
+	if o.IssuerURL.String() == "" || o.ClientID == "" || o.ClientSecret == "" {
 		return errors.New("providers.oidc.issuer-url, providers.oidc.client-id, providers.oidc.client-secret must be set")
 	}
 
@@ -37,7 +38,7 @@ func (o *OIDC) Setup() error {
 	o.ctx = context.Background()
 
 	// Try to initiate provider
-	o.provider, err = oidc.NewProvider(o.ctx, o.IssuerURL)
+	o.provider, err = oidc.NewProvider(o.ctx, o.IssuerURL.String())
 	if err != nil {
 		return err
 	}

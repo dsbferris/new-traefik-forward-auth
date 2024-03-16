@@ -8,6 +8,14 @@ type Url struct {
 	URL *url.URL
 }
 
+func ParseUrl(value string) (*Url, error) {
+	url, err := url.Parse(value)
+	if err != nil {
+		return nil, err
+	}
+	return &Url{URL: url}, nil
+}
+
 // implements [encoding.TextMarshaler]
 func (u Url) MarshalText() (value []byte, err error) {
 	return []byte(u.String()), nil
