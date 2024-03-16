@@ -44,15 +44,6 @@ func (s *Server) buildRoutes() {
 		s.log.Fatal(err)
 	}
 
-	// Let's build a router
-	for name, rule := range s.config.Rules {
-		matchRule := rule.FormattedRule()
-		err = s.muxer.AddRoute(matchRule, 1, s.Handler(rule.Action, rule.Provider, name))
-		if err != nil {
-			panic(err) // should not occur because rule is validated beforehand
-		}
-	}
-
 	// Add callback handler
 	s.muxer.Handle(s.config.Path, s.AuthCallbackHandler())
 
@@ -66,7 +57,9 @@ func (s *Server) buildRoutes() {
 	}))
 
 	// Add a default handler
-	s.muxer.NewRoute().Handler(s.Handler(s.config.DefaultAction, s.config.DefaultProvider, "default"))
+	//s.muxer.Handle("/", s.authHandler(s.config.DefaultProvider))
+	s.muxer.NewRoute().Handler(s.authHandler(s.config.DefaultProvider))
+
 }
 
 // RootHandler Overwrites the request method, host and URL with those from the
@@ -83,27 +76,6 @@ func (s *Server) RootHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Pass to mux
 	s.muxer.ServeHTTP(w, r)
-}
-
-func (s *Server) Handler(action, providerName, rule string) http.HandlerFunc {
-	switch action {
-	case "allow":
-		return s.allowHandler(rule)
-	case "soft-auth":
-		return s.softAuthHandler(providerName, rule)
-	case "auth":
-		return s.hardAuthHandler(providerName, rule)
-	default:
-		panic("unknown action " + action)
-	}
-}
-
-// allowHandler Allows requests
-func (s *Server) allowHandler(rule string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		s.logger(r, "Allow", rule, "Allowing request")
-		w.WriteHeader(200)
-	}
 }
 
 func (s *Server) GetUserFromCookie(r *http.Request) (*string, error) {
@@ -127,34 +99,16 @@ func (s *Server) GetUserFromCookie(r *http.Request) (*string, error) {
 	return &user, nil
 }
 
-func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerFunc {
+func (s *Server) authHandler(providerName string) http.HandlerFunc {
 	p, _ := s.config.GetConfiguredProvider(providerName)
 
-	var unauthorized func(w http.ResponseWriter)
-	if soft {
-		unauthorized = func(w http.ResponseWriter) {
-			if s.config.SoftAuthUser == "" {
-				for _, headerName := range s.config.HeaderNames {
-					w.Header().Del(headerName)
-				}
-			} else {
-				for _, headerName := range s.config.HeaderNames {
-					w.Header().Set(headerName, s.config.SoftAuthUser)
-				}
-			}
-			w.WriteHeader(200)
-		}
-	} else {
-		unauthorized = func(w http.ResponseWriter) {
-			http.Error(w, "Unauthorized", 401)
-		}
+	unauthorized := func(w http.ResponseWriter) {
+		http.Error(w, "Unauthorized", 401)
 	}
-
-	forceLogin := s.LoginHandler(providerName)
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Logging setup
-		logger := s.logger(r, "Auth", rule, "Authenticating request")
+		logger := s.logger(r, "Auth", "Authenticating request")
 
 		ipAddr := s.escapeNewlines(r.Header.Get("X-Forwarded-For"))
 		if ipAddr == "" {
@@ -170,15 +124,6 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 			}
 		}
 
-		// Explicit login route (s.config.Path+"/login") on soft-auth
-		if soft {
-			isForceLogin := strings.HasPrefix(r.Header.Get("X-Forwarded-Uri"), s.config.Path+"/login")
-			if isForceLogin {
-				forceLogin(w, r)
-				return
-			}
-		}
-
 		// Get user from cookie
 		user, err := s.GetUserFromCookie(r)
 		if err != nil {
@@ -187,17 +132,12 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 			return
 		}
 		if user == nil {
-			if soft {
-				unauthorized(w)
-				return
-			} else {
-				s.authRedirect(logger, w, r, p, s.a.CurrentUrl(r), false)
-				return
-			}
+			s.authRedirect(logger, w, r, p, s.a.CurrentUrl(r), false)
+			return
 		}
 
 		// Validate user
-		valid := s.a.ValidateUser(*user, rule)
+		valid := s.a.ValidateUser(*user)
 		if !valid {
 			logger.WithField("user", s.escapeNewlines(*user)).Warn("Invalid user")
 			unauthorized(w)
@@ -213,21 +153,11 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 	}
 }
 
-// softAuthHandler Soft-authenticates requests
-func (s *Server) softAuthHandler(providerName, rule string) http.HandlerFunc {
-	return s.authHandler(providerName, rule, true)
-}
-
-// hardAuthHandler Authenticates requests
-func (s *Server) hardAuthHandler(providerName, rule string) http.HandlerFunc {
-	return s.authHandler(providerName, rule, false)
-}
-
 // AuthCallbackHandler Handles auth callback request
 func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Logging setup
-		logger := s.logger(r, "AuthCallback", "default", "Handling callback")
+		logger := s.logger(r, "AuthCallback", "Handling callback")
 
 		// Check state
 		state := s.escapeNewlines(r.URL.Query().Get("state"))
@@ -325,7 +255,7 @@ func (s *Server) LoginHandler(providerName string) http.HandlerFunc {
 	p, _ := s.config.GetConfiguredProvider(providerName)
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		logger := s.logger(r, "Login", "default", "Handling login")
+		logger := s.logger(r, "Login", "Handling login")
 		logger.Info("Explicit user login")
 
 		// Calculate and validate redirect
@@ -364,7 +294,7 @@ func (s *Server) LoginHandler(providerName string) http.HandlerFunc {
 // LogoutHandler logs a user out
 func (s *Server) LogoutHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		logger := s.logger(r, "Logout", "default", "Handling logout")
+		logger := s.logger(r, "Logout", "Handling logout")
 		logger.Info("Logged out user")
 
 		// Clear cookie
@@ -423,11 +353,10 @@ func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *ht
 	}).Debug("Set CSRF cookie and redirected to provider login url")
 }
 
-func (s *Server) logger(r *http.Request, handler, rule, msg string) *logrus.Entry {
+func (s *Server) logger(r *http.Request, handler, msg string) *logrus.Entry {
 	// Create logger
 	logger := s.log.WithFields(logrus.Fields{
 		"handler":   handler,
-		"rule":      rule,
 		"method":    s.escapeNewlines(r.Header.Get("X-Forwarded-Method")),
 		"proto":     s.escapeNewlines(r.Header.Get("X-Forwarded-Proto")),
 		"host":      s.escapeNewlines(r.Header.Get("X-Forwarded-Host")),

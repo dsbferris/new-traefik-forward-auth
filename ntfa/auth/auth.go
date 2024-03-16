@@ -110,18 +110,10 @@ func (a *Auth) ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
 // ValidateUser checks if the given user matches either a whitelisted
 // user, as defined by the "whitelist" config parameter. Or is part of
 // a permitted domain, as defined by the "domains" config parameter
-func (a *Auth) ValidateUser(user, ruleName string) bool {
+func (a *Auth) ValidateUser(user string) bool {
 	// Use global config by default
 	whitelist := a.config.Whitelist
 	domains := a.config.Domains
-
-	if rule, ok := a.config.Rules[ruleName]; ok {
-		// Override with rule config if found
-		if len(rule.Whitelist) > 0 || len(rule.Domains) > 0 {
-			whitelist = rule.Whitelist
-			domains = rule.Domains
-		}
-	}
 
 	// Do we have any validation to perform?
 	if len(whitelist) == 0 && len(domains) == 0 {
@@ -141,8 +133,10 @@ func (a *Auth) ValidateUser(user, ruleName string) bool {
 	}
 
 	// Domain validation
-	if len(domains) > 0 && a.ValidateDomains(user, domains) {
-		return true
+	if len(domains) > 0 {
+		if a.ValidateDomains(user, domains) {
+			return true
+		}
 	}
 
 	return false
@@ -434,7 +428,8 @@ func (a *Auth) MatchCookieDomains(domain string) (bool, string) {
 
 // Create cookie hmac
 func (a *Auth) CookieSignature(r *http.Request, email, expires string) string {
-	hash := hmac.New(sha256.New, a.config.Secret)
+	// TODO switch to SHA3_512 or so
+	hash := hmac.New(sha256.New, []byte(a.config.Secret))
 	hash.Write([]byte(a.CookieDomain(r)))
 	hash.Write([]byte(email))
 	hash.Write([]byte(expires))

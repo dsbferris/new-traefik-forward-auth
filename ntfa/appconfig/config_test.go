@@ -31,14 +31,12 @@ func TestConfigDefaults(t *testing.T) {
 	assert.False(c.InsecureCookie)
 	assert.Equal("_forward_auth", c.CookieName)
 	assert.Equal("_forward_auth_csrf", c.CSRFCookieName)
-	assert.Equal("auth", c.DefaultAction)
 	assert.Equal("google", c.DefaultProvider)
 	assert.Len(c.Domains, 0)
 	assert.Equal(types.CommaSeparatedList{"X-Forwarded-User"}, c.HeaderNames)
 	assert.Equal(time.Second*time.Duration(43200), c.Lifetime)
 	assert.False(c.MatchWhitelistOrDomain)
 	assert.Equal("/_oauth", c.Path)
-	assert.Equal("", c.SoftAuthUser)
 	assert.Len(c.Whitelist, 0)
 	assert.Equal(c.Port, 4181)
 	assert.Len(c.ProbeToken, 0)
@@ -55,10 +53,6 @@ func TestConfigParseArgs(t *testing.T) {
 		"--cookie-name=cookiename",
 		"--csrf-cookie-name", "\"csrfcookiename\"",
 		"--default-provider", "\"oidc\"",
-		"--rule.1.action=allow",
-		"--rule.1.rule=PathPrefix(`/one`)",
-		"--rule.two.action=auth",
-		"--rule.two.rule=\"Host(`two.com`) && Path(`/two`)\"",
 		"--port=8000",
 		"--probe-token=super-secret-token",
 		"--probe-token-user=toki",
@@ -72,20 +66,6 @@ func TestConfigParseArgs(t *testing.T) {
 	assert.Equal(8000, c.Port)
 	assert.ElementsMatch(c.ProbeToken, []string{"super-secret-token"})
 	assert.Equal(c.ProbeTokenUser, "toki")
-
-	// Check rules
-	assert.Equal(map[string]*types.Rule{
-		"1": {
-			Action:   "allow",
-			Rule:     "PathPrefix(`/one`)",
-			Provider: "oidc",
-		},
-		"two": {
-			Action:   "auth",
-			Rule:     "Host(`two.com`) && Path(`/two`)",
-			Provider: "oidc",
-		},
-	}, c.Rules)
 }
 
 func TestConfigParseUnknownFlags(t *testing.T) {
@@ -95,28 +75,6 @@ func TestConfigParseUnknownFlags(t *testing.T) {
 	if assert.Error(t, err) {
 		assert.Equal(t, "unknown flag: unknown", err.Error())
 	}
-}
-
-func TestConfigParseRuleError(t *testing.T) {
-	assert := assert.New(t)
-
-	// Rule without name
-	_, err := NewConfig([]string{
-		"--rule..action=auth",
-	})
-	if assert.Error(err) {
-		assert.Equal("route name is required", err.Error())
-	}
-
-	// Rule without value
-	c, err := NewConfig([]string{
-		"--rule.one.action=",
-	})
-	if assert.Error(err) {
-		assert.Equal("route param value is required", err.Error())
-	}
-	// Check rules
-	assert.Equal(map[string]*types.Rule{}, c.Rules)
 }
 
 func TestConfigCommaSeperated(t *testing.T) {
@@ -144,18 +102,6 @@ func TestConfigParseIni(t *testing.T) {
 	assert.Equal("inicookiename", c.CookieName, "should be read from ini file")
 	assert.Equal("csrfcookiename", c.CSRFCookieName, "should be read from ini file")
 	assert.Equal("/two", c.Path, "variable in second ini file should override first ini file")
-	assert.Equal(map[string]*types.Rule{
-		"1": {
-			Action:   "allow",
-			Rule:     "PathPrefix(`/one`)",
-			Provider: "google",
-		},
-		"two": {
-			Action:   "auth",
-			Rule:     "Host(`two.com`) && Path(`/two`)",
-			Provider: "google",
-		},
-	}, c.Rules)
 }
 
 func TestConfigParseEnvironment(t *testing.T) {
@@ -195,60 +141,51 @@ func TestConfigTransformation(t *testing.T) {
 	require.Nil(t, err)
 
 	assert.Equal("/_oauthpath", c.Path, "path should add slash to front")
-
-	assert.Equal("verysecret", c.SecretString)
-	assert.Equal([]byte("verysecret"), c.Secret, "secret should be converted to byte array")
-
+	assert.Equal("verysecret", c.Secret)
 	assert.Equal(200, c.LifetimeString)
 	assert.Equal(time.Second*time.Duration(200), c.Lifetime, "lifetime should be read and converted to duration")
 }
 
 func TestConfigValidate(t *testing.T) {
-	assert := assert.New(t)
 
-	// Install new logger + hook
-	log, hook := test.NewNullLogger()
-	log.ExitFunc = func(code int) {}
+	t.Run("validate default config", func(t *testing.T) {
 
-	// Validate defualt config + rule error
-	c, _ := NewConfig([]string{
-		"--rule.1.action=bad",
+		assert := assert.New(t)
+		// Install new logger + hook
+		log, hook := test.NewNullLogger()
+		log.ExitFunc = func(code int) {}
+
+		// Validate default config
+		c, _ := NewConfig([]string{})
+		c.Validate(log)
+
+		logs := hook.AllEntries()
+		assert.Len(logs, 2)
+
+		// Should have fatal error requiring secret
+		assert.Equal("\"secret\" option must be set", logs[0].Message)
+		assert.Equal(logrus.FatalLevel, logs[0].Level)
+
+		// Should also have default provider (google) error
+		assert.Equal("providers.google.client-id, providers.google.client-secret must be set", logs[1].Message)
+		assert.Equal(logrus.FatalLevel, logs[1].Level)
+
 	})
-	c.Validate(log)
-
-	logs := hook.AllEntries()
-	assert.Len(logs, 3)
-
-	// Should have fatal error requiring secret
-	assert.Equal("\"secret\" option must be set", logs[0].Message)
-	assert.Equal(logrus.FatalLevel, logs[0].Level)
-
-	// Should also have default provider (google) error
-	assert.Equal("providers.google.client-id, providers.google.client-secret must be set", logs[1].Message)
-	assert.Equal(logrus.FatalLevel, logs[1].Level)
-
-	// Should validate rule
-	assert.Equal("invalid rule action, must be \"auth\", \"soft-auth\", or \"allow\"", logs[2].Message)
-	assert.Equal(logrus.FatalLevel, logs[2].Level)
-
-	hook.Reset()
+	t.Run("validate with invalid provider", func(t *testing.T) {
+		assert := assert.New(t)
+		_, err := NewConfig([]string{
+			"--secret=veryverysecret",
+			"--providers.google.client-id=id",
+			"--providers.google.client-secret=secret",
+			"--default-provider=bad",
+		})
+		if assert.Error(err) {
+			assert.Equal("Invalid value `bad' for option `--default-provider'. Allowed values are: google, oidc or generic-oauth", err.Error())
+		}
+	})
 
 	// Validate with invalid providers
-	c, _ = NewConfig([]string{
-		"--secret=veryverysecret",
-		"--providers.google.client-id=id",
-		"--providers.google.client-secret=secret",
-		"--rule.1.action=auth",
-		"--rule.1.provider=bad2",
-	})
-	c.Validate(log)
 
-	logs = hook.AllEntries()
-	assert.Len(logs, 1)
-
-	// Should have error for rule provider
-	assert.Equal("Unknown provider: bad2", logs[0].Message)
-	assert.Equal(logrus.FatalLevel, logs[0].Level)
 }
 
 func TestConfigGetProvider(t *testing.T) {
