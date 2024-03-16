@@ -46,7 +46,7 @@ func TestConfigDefaults(t *testing.T) {
 
 	assert.Equal("select_account", c.Providers.Google.Prompt)
 
-	assert.Len(c.TrustedIPAddresses, 0)
+	assert.Len(c.TrustedIPNetworks, 0)
 }
 
 func TestConfigParseArgs(t *testing.T) {
@@ -310,8 +310,7 @@ func TestConfigTrustedNetworks(t *testing.T) {
 	assert := assert.New(t)
 
 	c, err := NewConfig([]string{
-		"--trusted-ip-address=1.2.3.4",
-		"--trusted-ip-address=30.1.0.0/16",
+		"--trusted-ip-networks=1.2.3.4,30.1.0.0/16",
 	})
 
 	assert.NoError(err)
@@ -327,7 +326,7 @@ func TestConfigTrustedNetworks(t *testing.T) {
 	}
 
 	for in, want := range table {
-		got, err := c.IsIPAddressAuthenticated(in)
+		got, err := c.TrustedIPNetworks.ConatainsIp(in)
 		assert.NoError(err)
 		assert.Equal(want, got, "ip address: %s", in)
 	}

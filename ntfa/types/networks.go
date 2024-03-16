@@ -9,6 +9,31 @@ import (
 
 type Networks []*net.IPNet
 
+// UnmarshalFlag converts a string to a CookieDomain
+func (n *Networks) UnmarshalFlag(value string) error {
+	return n.Set(value)
+}
+
+// MarshalFlag converts a CookieDomain to a string
+func (n *Networks) MarshalFlag() (string, error) {
+	return n.String(), nil
+}
+
+func (n Networks) ConatainsIp(ip string) (bool, error) {
+	addr := net.ParseIP(ip)
+	if addr == nil {
+		return false, fmt.Errorf("invalid ip address: '%s'", ip)
+	}
+
+	for _, n := range n {
+		if n.Contains(addr) {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // implements [encoding.TextMarshaler]
 func (n Networks) MarshalText() (value []byte, err error) {
 	return []byte(n.String()), nil

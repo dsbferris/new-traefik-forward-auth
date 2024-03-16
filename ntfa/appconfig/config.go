@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -52,8 +51,7 @@ type AppConfig struct {
 	Secret   []byte `json:"-"`
 	Lifetime time.Duration
 
-	TrustedIPAddresses []string `long:"trusted-ip-address" env:"TRUSTED_IP_ADDRESS" env-delim:"," description:"List of trusted IP addresses or IP networks (in CIDR notation) that are considered authenticated"`
-	trustedIPNetworks  []*net.IPNet
+	TrustedIPNetworks types.Networks `long:"trusted-ip-networks" env:"TRUSTED_IP_NETWORKS" env-delim:"," description:"Comma separated list of trusted IP addresses or IP networks (in CIDR notation) that are considered authenticated"`
 }
 
 // NewGlobalConfig creates a new global appconfig, parsed from command arguments
@@ -101,39 +99,7 @@ func NewConfig(args []string) (*AppConfig, error) {
 	c.Secret = []byte(c.SecretString)
 	c.Lifetime = time.Second * time.Duration(c.LifetimeString)
 
-	if err := c.parseTrustedNetworks(); err != nil {
-		return nil, err
-	}
-
 	return c, nil
-}
-
-func (c *AppConfig) parseTrustedNetworks() error {
-	c.trustedIPNetworks = make([]*net.IPNet, len(c.TrustedIPAddresses))
-
-	for i := range c.TrustedIPAddresses {
-		addr := c.TrustedIPAddresses[i]
-		if strings.Contains(addr, "/") {
-			_, net, err := net.ParseCIDR(addr)
-			if err != nil {
-				return err
-			}
-			c.trustedIPNetworks[i] = net
-			continue
-		}
-
-		ipAddr := net.ParseIP(addr)
-		if ipAddr == nil {
-			return fmt.Errorf("invalid ip address: '%s'", ipAddr)
-		}
-
-		c.trustedIPNetworks[i] = &net.IPNet{
-			IP:   ipAddr,
-			Mask: []byte{255, 255, 255, 255},
-		}
-	}
-
-	return nil
 }
 
 func (c *AppConfig) parseFlags(args []string) error {
@@ -282,21 +248,6 @@ func (c *AppConfig) GetConfiguredProvider(name string) (provider.Provider, error
 	}
 
 	return c.GetProvider(name)
-}
-
-func (c *AppConfig) IsIPAddressAuthenticated(address string) (bool, error) {
-	addr := net.ParseIP(address)
-	if addr == nil {
-		return false, fmt.Errorf("invalid ip address: '%s'", address)
-	}
-
-	for _, n := range c.trustedIPNetworks {
-		if n.Contains(addr) {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }
 
 func (c *AppConfig) providerConfigured(name string) bool {

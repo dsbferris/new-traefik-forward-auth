@@ -160,7 +160,7 @@ func (s *Server) authHandler(providerName, rule string, soft bool) http.HandlerF
 		if ipAddr == "" {
 			logger.Warn("missing x-forwarded-for header")
 		} else {
-			ok, err := s.config.IsIPAddressAuthenticated(ipAddr)
+			ok, err := s.config.TrustedIPNetworks.ConatainsIp(ipAddr)
 			if err != nil {
 				logger.WithField("error", err).Warn("Invalid forwarded for")
 			} else if ok {

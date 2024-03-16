@@ -607,7 +607,7 @@ func newDefaultConfig() *appconfig.AppConfig {
 	config, _ := appconfig.NewConfig([]string{
 		"--providers.google.client-id=id",
 		"--providers.google.client-secret=secret",
-		"--trusted-ip-address=127.0.0.2",
+		"--trusted-ip-networks=127.0.0.2",
 	})
 
 	// Setup the google providers without running all the config validation
