@@ -61,7 +61,7 @@ func TestGoogleGetLoginURL(t *testing.T) {
 		ClientSecret: "sectest",
 		Scope:        "scopetest",
 		Prompt:       "consent select_account",
-		LoginURL: &types.Url{URL: &url.URL{
+		LoginURL: types.Url{URL: &url.URL{
 			Scheme: "https",
 			Host:   "google.com",
 			Path:   "/auth",
@@ -110,7 +110,7 @@ func TestGoogleExchangeCode(t *testing.T) {
 		ClientSecret: "sectest",
 		Scope:        "scopetest",
 		Prompt:       "consent select_account",
-		TokenURL: &types.Url{URL: &url.URL{
+		TokenURL: types.Url{URL: &url.URL{
 			Scheme: serverURL.Scheme,
 			Host:   serverURL.Host,
 			Path:   "/token",
@@ -135,7 +135,7 @@ func TestGoogleGetUser(t *testing.T) {
 		ClientSecret: "sectest",
 		Scope:        "scopetest",
 		Prompt:       "consent select_account",
-		UserURL: &types.Url{URL: &url.URL{
+		UserURL: types.Url{URL: &url.URL{
 			Scheme: serverURL.Scheme,
 			Host:   serverURL.Host,
 			Path:   "/userinfo",

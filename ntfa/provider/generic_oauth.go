@@ -15,9 +15,9 @@ var ErrInvalidSetup error = errors.New("providers.generic-oauth.auth-url, provid
 // GenericOAuth provider
 // TODO: change to *types.Url
 type GenericOAuth struct {
-	AuthURL      *types.Url       `long:"auth-url" env:"AUTH_URL" description:"Auth/Login URL"`
-	TokenURL     *types.Url       `long:"token-url" env:"TOKEN_URL" description:"Token URL"`
-	UserURL      *types.Url       `long:"user-url" env:"USER_URL" description:"URL used to retrieve user info"`
+	AuthURL      types.Url        `long:"auth-url" env:"AUTH_URL" description:"Auth/Login URL"`
+	TokenURL     types.Url        `long:"token-url" env:"TOKEN_URL" description:"Token URL"`
+	UserURL      types.Url        `long:"user-url" env:"USER_URL" description:"URL used to retrieve user info"`
 	ClientID     string           `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
 	ClientSecret string           `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
 	TokenStyle   types.TokenStyle `long:"token-style" env:"TOKEN_STYLE" default:"header" choice:"header" choice:"query" description:"How token is presented when querying the User URL"`
@@ -33,10 +33,7 @@ func (o *GenericOAuth) Name() string {
 // Setup performs validation and setup
 func (o *GenericOAuth) Setup() error {
 	// Check parmas
-	if o.AuthURL == nil ||
-		o.TokenURL == nil ||
-		o.UserURL == nil ||
-		o.AuthURL.String() == "" ||
+	if o.AuthURL.String() == "" ||
 		o.TokenURL.String() == "" ||
 		o.UserURL.String() == "" ||
 		o.ClientID == "" ||

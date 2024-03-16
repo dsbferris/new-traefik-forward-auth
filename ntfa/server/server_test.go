@@ -208,12 +208,12 @@ func TestServerAuthCallback(t *testing.T) {
 	// Setup OAuth server
 	server, serverURL := NewOAuthServer(t)
 	defer server.Close()
-	config.Providers.Google.TokenURL = &types.Url{URL: &url.URL{
+	config.Providers.Google.TokenURL = types.Url{URL: &url.URL{
 		Scheme: serverURL.Scheme,
 		Host:   serverURL.Host,
 		Path:   "/token",
 	}}
-	config.Providers.Google.UserURL = &types.Url{URL: &url.URL{
+	config.Providers.Google.UserURL = types.Url{URL: &url.URL{
 		Scheme: serverURL.Scheme,
 		Host:   serverURL.Host,
 		Path:   "/userinfo",
@@ -258,12 +258,12 @@ func TestServerAuthCallbackExchangeFailure(t *testing.T) {
 	// Setup OAuth server
 	server, serverURL := NewFailingOAuthServer(t)
 	defer server.Close()
-	config.Providers.Google.TokenURL = &types.Url{URL: &url.URL{
+	config.Providers.Google.TokenURL = types.Url{URL: &url.URL{
 		Scheme: serverURL.Scheme,
 		Host:   serverURL.Host,
 		Path:   "/token",
 	}}
-	config.Providers.Google.UserURL = &types.Url{URL: &url.URL{
+	config.Providers.Google.UserURL = types.Url{URL: &url.URL{
 		Scheme: serverURL.Scheme,
 		Host:   serverURL.Host,
 		Path:   "/userinfo",
@@ -285,14 +285,14 @@ func TestServerAuthCallbackUserFailure(t *testing.T) {
 	// Setup OAuth server
 	server, serverURL := NewOAuthServer(t)
 	defer server.Close()
-	config.Providers.Google.TokenURL = &types.Url{URL: &url.URL{
+	config.Providers.Google.TokenURL = types.Url{URL: &url.URL{
 		Scheme: serverURL.Scheme,
 		Host:   serverURL.Host,
 		Path:   "/token",
 	}}
 	serverFail, serverFailURL := NewFailingOAuthServer(t)
 	defer serverFail.Close()
-	config.Providers.Google.UserURL = &types.Url{URL: &url.URL{
+	config.Providers.Google.UserURL = types.Url{URL: &url.URL{
 		Scheme: serverFailURL.Scheme,
 		Host:   serverFailURL.Host,
 		Path:   "/userinfo",

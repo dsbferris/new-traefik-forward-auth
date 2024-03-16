@@ -17,9 +17,9 @@ type Google struct {
 	Scope        string
 	Prompt       string `long:"prompt" env:"PROMPT" default:"select_account" description:"Space separated list of OpenID prompt options"`
 
-	LoginURL *types.Url
-	TokenURL *types.Url
-	UserURL  *types.Url
+	LoginURL types.Url
+	TokenURL types.Url
+	UserURL  types.Url
 }
 
 // Name returns the name of the provider
