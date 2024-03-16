@@ -9,8 +9,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	mux "github.com/traefik/traefik/v2/pkg/muxer/http"
-
 	"github.com/dsbferris/new-traefik-forward-auth/appconfig"
 	"github.com/dsbferris/new-traefik-forward-auth/auth"
 	"github.com/dsbferris/new-traefik-forward-auth/provider"
@@ -18,7 +16,7 @@ import (
 
 // Server contains router and handler methods
 type Server struct {
-	muxer  *mux.Muxer
+	muxer  *http.ServeMux
 	log    *logrus.Logger
 	config *appconfig.AppConfig
 	a      *auth.Auth
@@ -38,11 +36,7 @@ func (s *Server) escapeNewlines(data string) string {
 }
 
 func (s *Server) buildRoutes() {
-	var err error
-	s.muxer, err = mux.NewMuxer()
-	if err != nil {
-		s.log.Fatal(err)
-	}
+	s.muxer = http.NewServeMux()
 
 	// Add callback handler
 	s.muxer.Handle(s.config.Path, s.AuthCallbackHandler())
@@ -57,9 +51,7 @@ func (s *Server) buildRoutes() {
 	}))
 
 	// Add a default handler
-	//s.muxer.Handle("/", s.authHandler(s.config.DefaultProvider))
-	s.muxer.NewRoute().Handler(s.authHandler(s.config.DefaultProvider))
-
+	s.muxer.Handle("/", s.authHandler(s.config.DefaultProvider))
 }
 
 // RootHandler Overwrites the request method, host and URL with those from the
