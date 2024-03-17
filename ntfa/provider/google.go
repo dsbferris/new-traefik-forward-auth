@@ -23,7 +23,7 @@ type Google struct {
 }
 
 // Name returns the name of the provider
-func (g *Google) Name() string {
+func (g Google) Name() string {
 	return "google"
 }
 
@@ -56,7 +56,7 @@ func (g *Google) Setup() error {
 }
 
 // GetLoginURL provides the login url for the given redirect uri and state
-func (g *Google) GetLoginURL(redirectURI, state string, forcePrompt bool) string {
+func (g Google) GetLoginURL(redirectURI, state string, forcePrompt bool) string {
 	q := url.Values{}
 	q.Set("client_id", g.ClientID)
 	q.Set("response_type", "code")
@@ -74,7 +74,7 @@ func (g *Google) GetLoginURL(redirectURI, state string, forcePrompt bool) string
 }
 
 // ExchangeCode exchanges the given redirect uri and code for a token
-func (g *Google) ExchangeCode(redirectURI, code string) (string, error) {
+func (g Google) ExchangeCode(redirectURI, code string) (string, error) {
 	form := url.Values{}
 	form.Set("client_id", g.ClientID)
 	form.Set("client_secret", g.ClientSecret)
@@ -95,7 +95,7 @@ func (g *Google) ExchangeCode(redirectURI, code string) (string, error) {
 }
 
 // GetUser uses the given token and returns a userID located at the json path
-func (g *Google) GetUser(token, UserPath string) (string, error) {
+func (g Google) GetUser(token, UserPath string) (string, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", g.UserURL.String(), nil)
 	if err != nil {

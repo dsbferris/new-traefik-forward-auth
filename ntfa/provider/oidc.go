@@ -23,7 +23,7 @@ type OIDC struct {
 }
 
 // Name returns the name of the provider
-func (o *OIDC) Name() string {
+func (o OIDC) Name() string {
 	return "oidc"
 }
 
@@ -64,12 +64,12 @@ func (o *OIDC) Setup() error {
 }
 
 // GetLoginURL provides the login url for the given redirect uri and state
-func (o *OIDC) GetLoginURL(redirectURI, state string, forcePrompt bool) string {
+func (o OIDC) GetLoginURL(redirectURI, state string, forcePrompt bool) string {
 	return o.OAuthGetLoginURL(redirectURI, state, forcePrompt)
 }
 
 // ExchangeCode exchanges the given redirect uri and code for a token
-func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
+func (o OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 	token, err := o.OAuthExchangeCode(redirectURI, code)
 	if err != nil {
 		return "", err
@@ -77,13 +77,13 @@ func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 	// Extract ID token
 	rawIDToken, ok := token.Extra("id_token").(string)
 	if !ok {
-		return "", errors.New("Missing id_token")
+		return "", errors.New("missing id_token")
 	}
 	return rawIDToken, nil
 }
 
 // GetUser uses the given token and returns a complete provider.User object
-func (o *OIDC) GetUser(token, UserPath string) (string, error) {
+func (o OIDC) GetUser(token, UserPath string) (string, error) {
 	// Parse & Verify ID Token
 	idToken, err := o.verifier.Verify(o.ctx, token)
 	if err != nil {

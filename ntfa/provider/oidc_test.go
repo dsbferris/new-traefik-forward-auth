@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/dsbferris/new-traefik-forward-auth/types"
 	jose "github.com/go-jose/go-jose/v3"
 	jwt "github.com/golang-jwt/jwt/v5"
