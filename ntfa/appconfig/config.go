@@ -65,25 +65,43 @@ func NewGlobalConfig() *AppConfig {
 
 // NewConfig parses and validates provided configuration into a appconfig object
 func NewConfig(args []string) (*AppConfig, error) {
-	c := &AppConfig{}
+	config := &AppConfig{}
 
-	err := c.parseFlags(args)
+	err := config.parseFlags(args)
 	if err != nil {
-		return c, err
+		return config, err
 	}
-
-	// TODO: as log flags have now been parsed maybe we should return here so
-	// any further errors can be logged via logrus instead of printed?
-
-	// TODO: Rename "Validate" method to "Setup" and move all below logic
 
 	// Transformations
-	if len(c.Path) > 0 && c.Path[0] != '/' {
-		c.Path = "/" + c.Path
+	// TODO dont convert. throw error if not fitting
+	if len(config.Path) > 0 && config.Path[0] != '/' {
+		config.Path = "/" + config.Path
 	}
-	c.Lifetime = time.Second * time.Duration(c.LifetimeString)
+	// TODO change lifetime string to time.Duration
+	config.Lifetime = time.Second * time.Duration(config.LifetimeString)
 
-	return c, nil
+	// Check for show stopper errors
+	if len(config.Secret) == 0 || strings.TrimSpace(config.Secret) == "" {
+		return nil, ErrSecretEmpty
+	}
+
+	if len(config.HeaderNames) == 0 {
+		return nil, ErrHeaderNamesEmpty
+	}
+	for _, h := range config.HeaderNames {
+		if strings.TrimSpace(h) == "" {
+			return nil, ErrHeaderNamesEmpty
+		}
+	}
+
+	// Setup default provider
+	err = config.setupProvider(config.DefaultProvider)
+	if err != nil {
+		return nil, err
+	}
+	// TODO is more validation neccessary?
+
+	return config, nil
 }
 
 func (c *AppConfig) parseFlags(args []string) error {
@@ -114,27 +132,7 @@ func handleFlagError(err error) error {
 		// Library has just printed cli help
 		os.Exit(0)
 	}
-
 	return err
-}
-
-// Validate validates a appconfig object
-func (c *AppConfig) Validate(log *logrus.Logger) {
-	// Check for show stopper errors
-	if len(c.Secret) == 0 {
-		log.Fatal("\"secret\" option must be set")
-	}
-
-	if len(c.HeaderNames) == 0 {
-		log.Fatal("\"header-names\" option must be set")
-	}
-
-	// Setup default provider
-	err := c.setupProvider(c.DefaultProvider)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// TODO is more validation neccessary?
 }
 
 func (c AppConfig) String() string {
@@ -145,30 +143,24 @@ func (c AppConfig) String() string {
 // GetProvider returns the provider of the given name
 func (c *AppConfig) GetProvider(name string) (provider.Provider, error) {
 	switch name {
-	case "google":
+	case c.Providers.Google.Name():
 		return &c.Providers.Google, nil
-	case "oidc":
+	case c.Providers.OIDC.Name():
 		return &c.Providers.OIDC, nil
-	case "generic-oauth":
+	case c.Providers.GenericOAuth.Name():
 		return &c.Providers.GenericOAuth, nil
 	}
-
-	return nil, fmt.Errorf("Unknown provider: %s", name)
+	return nil, fmt.Errorf("unknown provider: %s", name)
 }
 
 // GetConfiguredProvider returns the provider of the given name, if it has been
 // configured. Returns an error if the provider is unknown, or hasn't been configured
 func (c *AppConfig) GetConfiguredProvider(name string) (provider.Provider, error) {
 	// Check the provider has been configured
-	if !c.providerConfigured(name) {
-		return nil, fmt.Errorf("Unconfigured provider: %s", name)
+	if name != c.DefaultProvider {
+		return nil, fmt.Errorf("unconfigured provider: %s", name)
 	}
-
 	return c.GetProvider(name)
-}
-
-func (c *AppConfig) providerConfigured(name string) bool {
-	return name == c.DefaultProvider
 }
 
 func (c *AppConfig) setupProvider(name string) error {

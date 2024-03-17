@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/dsbferris/new-traefik-forward-auth/types"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,13 +16,54 @@ import (
  * Tests
  */
 
+func TestNewConfig(t *testing.T) {
+	assert := assert.New(t)
+
+	t.Run("validate emtpy config", func(t *testing.T) {
+		config, err := NewConfig([]string{})
+		assert.Nil(config)
+		if assert.Error(err) {
+			assert.Equal(ErrSecretEmpty, err)
+		}
+	})
+
+	t.Run("validate with empty header names", func(t *testing.T) {
+		_, err := NewConfig([]string{
+			"--secret=veryverysecret",
+			"--header-names= ",
+		})
+		if assert.Error(err) {
+			assert.Equal(ErrHeaderNamesEmpty, err)
+		}
+	})
+
+	t.Run("validate with invalid provider", func(t *testing.T) {
+		_, err := NewConfig([]string{
+			"--secret=veryverysecret",
+			"--providers.google.client-id=id",
+			"--providers.google.client-secret=secret",
+			"--default-provider=bad",
+		})
+		if assert.Error(err) {
+			assert.Equal("Invalid value `bad' for option `--default-provider'. Allowed values are: google, oidc or generic-oauth", err.Error())
+		}
+	})
+
+	// Validate with invalid providers
+
+}
+
 func TestConfigDefaults(t *testing.T) {
 	assert := assert.New(t)
-	c, err := NewConfig([]string{})
+	c, err := NewConfig([]string{
+		"--secret=veryverysecret",
+		"--providers.google.client-id=id",
+		"--providers.google.client-secret=secret",
+	})
 	assert.Nil(err)
 
-	assert.Equal("warn", c.LogLevel)
-	assert.Equal("text", c.LogFormat)
+	assert.Equal(types.LEVEL_WARN, c.LogLevel)
+	assert.Equal(types.FORMAT_TEXT, c.LogFormat)
 
 	assert.Equal("", c.AuthHost.String())
 	assert.Len(c.CookieDomains, 0)
@@ -39,8 +78,6 @@ func TestConfigDefaults(t *testing.T) {
 	assert.Equal("/_oauth", c.Path)
 	assert.Len(c.Whitelist, 0)
 	assert.Equal(c.Port, 4181)
-	assert.Len(c.ProbeToken, 0)
-	assert.Equal(c.ProbeTokenUser, "probe")
 
 	assert.Equal("select_account", c.Providers.Google.Prompt)
 
@@ -50,12 +87,15 @@ func TestConfigDefaults(t *testing.T) {
 func TestConfigParseArgs(t *testing.T) {
 	assert := assert.New(t)
 	c, err := NewConfig([]string{
+		"--secret=veryverysecret",
+		"--providers.oidc.client-id=id",
+		"--providers.oidc.client-secret=secret",
+		"--providers.oidc.issuer-url=https://accounts.google.com",
+
 		"--cookie-name=cookiename",
-		"--csrf-cookie-name", "\"csrfcookiename\"",
-		"--default-provider", "\"oidc\"",
+		"--csrf-cookie-name", "csrfcookiename",
+		"--default-provider", "oidc",
 		"--port=8000",
-		"--probe-token=super-secret-token",
-		"--probe-token-user=toki",
 	})
 	require.Nil(t, err)
 
@@ -64,8 +104,6 @@ func TestConfigParseArgs(t *testing.T) {
 	assert.Equal("csrfcookiename", c.CSRFCookieName)
 	assert.Equal("oidc", c.DefaultProvider)
 	assert.Equal(8000, c.Port)
-	assert.ElementsMatch(c.ProbeToken, []string{"super-secret-token"})
-	assert.Equal(c.ProbeTokenUser, "toki")
 }
 
 func TestConfigParseUnknownFlags(t *testing.T) {
@@ -80,6 +118,10 @@ func TestConfigParseUnknownFlags(t *testing.T) {
 func TestConfigCommaSeperated(t *testing.T) {
 	assert := assert.New(t)
 	c, err := NewConfig([]string{
+		"--secret=veryverysecret",
+		"--providers.google.client-id=id",
+		"--providers.google.client-secret=secret",
+
 		"--whitelist=test@test.com,test2@test2.com",
 	})
 	require.Nil(t, err)
@@ -93,6 +135,10 @@ func TestConfigParseIni(t *testing.T) {
 	configFile1, _ := filepath.Abs("../testfiles/config0")
 	configFile2, _ := filepath.Abs("../testfiles/config1")
 	c, err := NewConfig([]string{
+		"--secret=veryverysecret",
+		"--providers.google.client-id=id",
+		"--providers.google.client-secret=secret",
+
 		"--config=" + configFile1,
 		"--config=" + configFile2,
 		"--csrf-cookie-name=csrfcookiename",
@@ -112,7 +158,10 @@ func TestConfigParseEnvironment(t *testing.T) {
 	os.Setenv("DOMAIN", "test2.com,example.org")
 	os.Setenv("WHITELIST", "test3.com,example.org")
 
-	c, err := NewConfig([]string{})
+	c, err := NewConfig([]string{
+		"--secret=veryverysecret",
+		"--providers.google.client-secret=secret",
+	})
 	assert.Nil(err)
 
 	assert.Equal("env_cookie_name", c.CookieName, "variable should be read from environment")
@@ -134,64 +183,27 @@ func TestConfigParseEnvironment(t *testing.T) {
 func TestConfigTransformation(t *testing.T) {
 	assert := assert.New(t)
 	c, err := NewConfig([]string{
+		"--secret=veryverysecret",
+		"--providers.google.client-id=id",
+		"--providers.google.client-secret=secret",
+
 		"--url-path=_oauthpath",
-		"--secret=verysecret",
 		"--lifetime=200",
 	})
 	require.Nil(t, err)
 
 	assert.Equal("/_oauthpath", c.Path, "path should add slash to front")
-	assert.Equal("verysecret", c.Secret)
 	assert.Equal(200, c.LifetimeString)
 	assert.Equal(time.Second*time.Duration(200), c.Lifetime, "lifetime should be read and converted to duration")
 }
 
-func TestConfigValidate(t *testing.T) {
-
-	t.Run("validate default config", func(t *testing.T) {
-
-		assert := assert.New(t)
-		// Install new logger + hook
-		log, hook := test.NewNullLogger()
-		log.ExitFunc = func(code int) {}
-
-		// Validate default config
-		c, _ := NewConfig([]string{})
-		c.Validate(log)
-
-		logs := hook.AllEntries()
-		assert.Len(logs, 2)
-
-		// Should have fatal error requiring secret
-		assert.Equal("\"secret\" option must be set", logs[0].Message)
-		assert.Equal(logrus.FatalLevel, logs[0].Level)
-
-		// Should also have default provider (google) error
-		assert.Equal("providers.google.client-id, providers.google.client-secret must be set", logs[1].Message)
-		assert.Equal(logrus.FatalLevel, logs[1].Level)
-
-	})
-	t.Run("validate with invalid provider", func(t *testing.T) {
-		assert := assert.New(t)
-		_, err := NewConfig([]string{
-			"--secret=veryverysecret",
-			"--providers.google.client-id=id",
-			"--providers.google.client-secret=secret",
-			"--default-provider=bad",
-		})
-		if assert.Error(err) {
-			assert.Equal("Invalid value `bad' for option `--default-provider'. Allowed values are: google, oidc or generic-oauth", err.Error())
-		}
-	})
-
-	// Validate with invalid providers
-
-}
-
 func TestConfigGetProvider(t *testing.T) {
 	assert := assert.New(t)
-	c, _ := NewConfig([]string{})
-
+	c, _ := NewConfig([]string{
+		"--secret=veryverysecret",
+		"--providers.google.client-id=id",
+		"--providers.google.client-secret=secret",
+	})
 	// Should be able to get "google" provider
 	p, err := c.GetProvider("google")
 	assert.Nil(err)
@@ -210,13 +222,17 @@ func TestConfigGetProvider(t *testing.T) {
 	// Should catch unknown provider
 	_, err = c.GetProvider("bad")
 	if assert.Error(err) {
-		assert.Equal("Unknown provider: bad", err.Error())
+		assert.Equal("unknown provider: bad", err.Error())
 	}
 }
 
 func TestConfigGetConfiguredProvider(t *testing.T) {
 	assert := assert.New(t)
-	c, _ := NewConfig([]string{})
+	c, _ := NewConfig([]string{
+		"--secret=veryverysecret",
+		"--providers.google.client-id=id",
+		"--providers.google.client-secret=secret",
+	})
 
 	// Should be able to get "google" default provider
 	p, err := c.GetConfiguredProvider("google")
@@ -226,7 +242,7 @@ func TestConfigGetConfiguredProvider(t *testing.T) {
 	// Should fail to get valid "oidc" provider as it's not configured
 	_, err = c.GetConfiguredProvider("oidc")
 	if assert.Error(err) {
-		assert.Equal("Unconfigured provider: oidc", err.Error())
+		assert.Equal("unconfigured provider: oidc", err.Error())
 	}
 }
 
@@ -247,6 +263,10 @@ func TestConfigTrustedNetworks(t *testing.T) {
 	assert := assert.New(t)
 
 	c, err := NewConfig([]string{
+		"--secret=veryverysecret",
+		"--providers.google.client-id=id",
+		"--providers.google.client-secret=secret",
+
 		"--trusted-ip-networks=1.2.3.4,30.1.0.0/16",
 	})
 
