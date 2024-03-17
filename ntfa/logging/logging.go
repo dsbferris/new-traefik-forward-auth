@@ -1,57 +1,78 @@
 package logging
 
 import (
+	"fmt"
+	"log/slog"
 	"os"
+	"runtime/debug"
+	"strconv"
+	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/dsbferris/new-traefik-forward-auth/types"
+	"github.com/lmittmann/tint"
+	"github.com/mattn/go-colorable"
+	"github.com/mattn/go-isatty"
 )
 
-var log *logrus.Logger
+func NewLogger(format types.LogFormat, level types.LogLevel) (*slog.Logger, error) {
+	var log *slog.Logger
 
-func NewDefaultLogger() *logrus.Logger {
-	log = logrus.StandardLogger()
-	log.Level = logrus.PanicLevel
-	return log
+	switch format {
+	case types.FORMAT_PRETTY:
+		log = getPrettyLogger(level)
+	case types.FORMAT_TEXT:
+		log = getTextLogger(level)
+	case types.FORMAT_JSON:
+		log = getJsonLogger(level)
+	default:
+		return nil, fmt.Errorf("unkown log format: %d", format)
+	}
+
+	log.Debug("PID: " + strconv.Itoa(os.Getpid()))
+
+	buildInfo, ok := debug.ReadBuildInfo()
+	if !ok {
+		log.Debug("call to debug.ReadBuildInfo() failed")
+	} else {
+		log.Debug("go version: " + buildInfo.GoVersion)
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Debug("call to os.Getwd() failed")
+	} else {
+		log.Debug("current working directoy: " + cwd)
+	}
+	return log, nil
 }
 
-// NewLogger creates a new logger based on the current configuration
-func NewLogger(logFormat, logLevel string) *logrus.Logger {
-	// Setup logger
-	log = logrus.StandardLogger()
-	logrus.SetOutput(os.Stdout)
-
-	// Set logger format
-	switch logFormat {
-	case "pretty":
-		break
-	case "json":
-		logrus.SetFormatter(&logrus.JSONFormatter{})
-	// "text" is the default
-	default:
-		logrus.SetFormatter(&logrus.TextFormatter{
-			DisableColors: true,
-			FullTimestamp: true,
-		})
+func getPrettyLogger(level types.LogLevel) *slog.Logger {
+	w := os.Stderr
+	opts := &tint.Options{
+		TimeFormat: time.RFC3339,
+		Level:      slog.Level(level),
+		//isatty checks if current terminal supports colors
+		NoColor:   !isatty.IsTerminal(w.Fd()),
+		AddSource: true,
 	}
+	// tint allows for nice colorized output
+	// colorable adds support for windows
+	return slog.New(tint.NewHandler(colorable.NewColorable(w), opts))
+}
 
-	// Set logger level
-	switch logLevel {
-	case "trace":
-		logrus.SetLevel(logrus.TraceLevel)
-	case "debug":
-		logrus.SetLevel(logrus.DebugLevel)
-	case "info":
-		logrus.SetLevel(logrus.InfoLevel)
-	case "error":
-		logrus.SetLevel(logrus.ErrorLevel)
-	case "fatal":
-		logrus.SetLevel(logrus.FatalLevel)
-	case "panic":
-		logrus.SetLevel(logrus.PanicLevel)
-	// warn is the default
-	default:
-		logrus.SetLevel(logrus.WarnLevel)
+func getTextLogger(level types.LogLevel) *slog.Logger {
+	w := os.Stderr
+	opts := &tint.Options{
+		TimeFormat: time.RFC3339,
+		Level:      slog.Level(level),
+		NoColor:    true,
+		AddSource:  true,
 	}
+	return slog.New(tint.NewHandler(w, opts))
+}
 
-	return log
+func getJsonLogger(level types.LogLevel) *slog.Logger {
+	return slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		Level: slog.Level(level),
+	}))
 }

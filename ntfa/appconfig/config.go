@@ -2,23 +2,27 @@ package appconfig
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/thomseddon/go-flags"
 
 	"github.com/dsbferris/new-traefik-forward-auth/provider"
 	"github.com/dsbferris/new-traefik-forward-auth/types"
 )
 
-var config *AppConfig
+var (
+	ErrSecretEmpty      = errors.New("secret must be set")
+	ErrHeaderNamesEmpty = errors.New("header-names must be set")
+)
 
 // AppConfig holds the runtime application appconfig
 type AppConfig struct {
-	LogLevel  string `long:"log-level" env:"LOG_LEVEL" default:"warn" choice:"trace" choice:"debug" choice:"info" choice:"warn" choice:"error" choice:"fatal" choice:"panic" description:"Log level"`
-	LogFormat string `long:"log-format"  env:"LOG_FORMAT" default:"text" choice:"text" choice:"json" choice:"pretty" description:"Log format"`
+	LogLevel  types.LogLevel  `long:"log-level" env:"LOG_LEVEL" default:"warn" choice:"debug" choice:"info" choice:"warn" choice:"error" description:"Log level"`
+	LogFormat types.LogFormat `long:"log-format"  env:"LOG_FORMAT" default:"text" choice:"text" choice:"json" choice:"pretty" description:"Log format"`
 
 	AuthHost        types.Url            `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 	Config          func(s string) error `long:"config" env:"CONFIG" description:"Path to appconfig file" json:"-"`
@@ -49,19 +53,10 @@ type AppConfig struct {
 	TrustedIPNetworks types.Networks `long:"trusted-ip-networks" env:"TRUSTED_IP_NETWORKS" env-delim:"," description:"Comma separated list of trusted IP addresses or IP networks (in CIDR notation) that are considered authenticated"`
 }
 
-// NewGlobalConfig creates a new global appconfig, parsed from command arguments
-func NewGlobalConfig() *AppConfig {
-	var err error
-	config, err = NewConfig(os.Args[1:])
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-		os.Exit(1)
-	}
-
-	return config
+// NewDefaultConfig creates a new global appconfig, parsed from command arguments
+func NewDefaultConfig() (*AppConfig, error) {
+	return NewConfig(os.Args[1:])
 }
-
-// TODO: move appconfig parsing into new func "NewParsedConfig"
 
 // NewConfig parses and validates provided configuration into a appconfig object
 func NewConfig(args []string) (*AppConfig, error) {

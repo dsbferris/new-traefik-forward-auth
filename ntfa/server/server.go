@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -17,14 +18,18 @@ import (
 // Server contains router and handler methods
 type Server struct {
 	muxer  *http.ServeMux
-	log    *logrus.Logger
+	logger *slog.Logger
 	config *appconfig.AppConfig
-	a      *auth.Auth
+	auth   *auth.Auth
 }
 
 // NewServer creates a new server object and builds router
-func NewServer(log *logrus.Logger, c *appconfig.AppConfig) *Server {
-	s := &Server{log: log, config: c, a: auth.NewAuth(c)}
+func NewServer(logger *slog.Logger, config *appconfig.AppConfig) *Server {
+	s := &Server{
+		logger: logger,
+		config: config,
+		auth:   auth.NewAuth(config),
+	}
 	s.buildRoutes()
 	return s
 }
@@ -78,7 +83,7 @@ func (s *Server) GetUserFromCookie(r *http.Request) (*string, error) {
 	}
 
 	// Validate cookie
-	user, err := s.a.ValidateCookie(r, c)
+	user, err := s.auth.ValidateCookie(r, c)
 	if err != nil {
 		if errors.Is(err, auth.ErrCookieExpired) {
 			return nil, nil
@@ -100,7 +105,7 @@ func (s *Server) authHandler(providerName string) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Logging setup
-		logger := s.logger(r, "Auth", "Authenticating request")
+		logger := s.requestLogger(r, "Auth", "Authenticating request")
 
 		ipAddr := s.escapeNewlines(r.Header.Get("X-Forwarded-For"))
 		if ipAddr == "" {
@@ -124,12 +129,12 @@ func (s *Server) authHandler(providerName string) http.HandlerFunc {
 			return
 		}
 		if user == nil {
-			s.authRedirect(logger, w, r, p, s.a.CurrentUrl(r), false)
+			s.authRedirect(logger, w, r, p, s.auth.CurrentUrl(r), false)
 			return
 		}
 
 		// Validate user
-		valid := s.a.ValidateUser(*user)
+		valid := s.auth.ValidateUser(*user)
 		if !valid {
 			logger.WithField("user", s.escapeNewlines(*user)).Warn("Invalid user")
 			unauthorized(w)
@@ -149,11 +154,11 @@ func (s *Server) authHandler(providerName string) http.HandlerFunc {
 func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Logging setup
-		logger := s.logger(r, "AuthCallback", "Handling callback")
+		logger := s.requestLogger(r, "AuthCallback", "Handling callback")
 
 		// Check state
 		state := s.escapeNewlines(r.URL.Query().Get("state"))
-		if err := s.a.ValidateState(state); err != nil {
+		if err := s.auth.ValidateState(state); err != nil {
 			logger.WithFields(logrus.Fields{
 				"error": err,
 			}).Warn("Error validating state")
@@ -162,7 +167,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		}
 
 		// Check for CSRF cookie
-		c, err := s.a.FindCSRFCookie(r, state)
+		c, err := s.auth.FindCSRFCookie(r, state)
 		if err != nil {
 			logger.Info("Missing csrf cookie")
 			http.Error(w, "Not authorized", 401)
@@ -170,7 +175,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		}
 
 		// Validate CSRF cookie against state
-		valid, providerName, redirect, err := s.a.ValidateCSRFCookie(c, state)
+		valid, providerName, redirect, err := s.auth.ValidateCSRFCookie(c, state)
 		if !valid {
 			logger.WithFields(logrus.Fields{
 				"error":       err,
@@ -193,10 +198,10 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		}
 
 		// Clear CSRF cookie
-		http.SetCookie(w, s.a.ClearCSRFCookie(r, c))
+		http.SetCookie(w, s.auth.ClearCSRFCookie(r, c))
 
 		// Validate redirect
-		redirectURL, err := s.a.ValidateRedirect(r, redirect)
+		redirectURL, err := s.auth.ValidateRedirect(r, redirect)
 		if err != nil {
 			logger.WithFields(logrus.Fields{
 				"received_redirect": redirect,
@@ -214,7 +219,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		}
 
 		// Exchange code for token
-		token, err := p.ExchangeCode(s.a.RedirectUri(r), r.URL.Query().Get("code"))
+		token, err := p.ExchangeCode(s.auth.RedirectUri(r), r.URL.Query().Get("code"))
 		if err != nil {
 			logger.WithField("error", err).Error("Code exchange failed with provider")
 			http.Error(w, "Service unavailable", 503)
@@ -230,7 +235,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		}
 
 		// Generate cookie
-		http.SetCookie(w, s.a.MakeCookie(r, user))
+		http.SetCookie(w, s.auth.MakeCookie(r, user))
 		logger.WithFields(logrus.Fields{
 			"provider": providerName,
 			"redirect": redirect,
@@ -247,12 +252,12 @@ func (s *Server) LoginHandler(providerName string) http.HandlerFunc {
 	p, _ := s.config.GetConfiguredProvider(providerName)
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		logger := s.logger(r, "Login", "Handling login")
+		logger := s.requestLogger(r, "Login", "Handling login")
 		logger.Info("Explicit user login")
 
 		// Calculate and validate redirect
-		redirect := s.a.GetRedirectURI(r)
-		redirectURL, err := s.a.ValidateLoginRedirect(r, redirect)
+		redirect := s.auth.GetRedirectURI(r)
+		redirectURL, err := s.auth.ValidateLoginRedirect(r, redirect)
 		if err != nil {
 			logger.WithFields(logrus.Fields{
 				"received_redirect": redirect,
@@ -286,18 +291,18 @@ func (s *Server) LoginHandler(providerName string) http.HandlerFunc {
 // LogoutHandler logs a user out
 func (s *Server) LogoutHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		logger := s.logger(r, "Logout", "Handling logout")
+		logger := s.requestLogger(r, "Logout", "Handling logout")
 		logger.Info("Logged out user")
 
 		// Clear cookie
-		http.SetCookie(w, s.a.ClearCookie(r))
+		http.SetCookie(w, s.auth.ClearCookie(r))
 
 		// Calculate and validate redirect
 		redirect := r.URL.Query().Get("redirect")
 		if redirect == "" {
 			redirect = "/"
 		}
-		redirectURL, err := s.a.ValidateLoginRedirect(r, redirect)
+		redirectURL, err := s.auth.ValidateLoginRedirect(r, redirect)
 		if err != nil {
 			logger.WithFields(logrus.Fields{
 				"received_redirect": redirect,
@@ -312,7 +317,7 @@ func (s *Server) LogoutHandler() http.HandlerFunc {
 
 func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *http.Request, p provider.Provider, returnUrl string, forcePrompt bool) {
 	// Error indicates no cookie, generate nonce
-	nonce, err := s.a.Nonce()
+	nonce, err := s.auth.Nonce()
 	if err != nil {
 		logger.WithField("error", err).Error("Error generating nonce")
 		http.Error(w, "Service unavailable", 503)
@@ -322,11 +327,11 @@ func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *ht
 	// clean existing CSRF cookie
 	for _, v := range r.Cookies() {
 		if strings.Contains(v.Name, s.config.CSRFCookieName) {
-			http.SetCookie(w, s.a.ClearCSRFCookie(r, v))
+			http.SetCookie(w, s.auth.ClearCSRFCookie(r, v))
 		}
 	}
 	// Set the CSRF cookie
-	csrf := s.a.MakeCSRFCookie(r, nonce)
+	csrf := s.auth.MakeCSRFCookie(r, nonce)
 	http.SetCookie(w, csrf)
 
 	if !s.config.InsecureCookie && r.Header.Get("X-Forwarded-Proto") != "https" {
@@ -336,7 +341,7 @@ func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *ht
 	}
 
 	// Forward them on
-	loginURL := p.GetLoginURL(s.a.RedirectUri(r), s.a.MakeState(returnUrl, p, nonce), forcePrompt)
+	loginURL := p.GetLoginURL(s.auth.RedirectUri(r), s.auth.MakeState(returnUrl, p, nonce), forcePrompt)
 	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
 
 	logger.WithFields(logrus.Fields{
@@ -345,9 +350,11 @@ func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *ht
 	}).Debug("Set CSRF cookie and redirected to provider login url")
 }
 
-func (s *Server) logger(r *http.Request, handler, msg string) *logrus.Entry {
+func (s *Server) requestLogger(r *http.Request, handler, msg string) *logrus.Entry {
 	// Create logger
-	logger := s.log.WithFields(logrus.Fields{
+	// TODO FIX THIS PIECE
+	l := logrus.StandardLogger()
+	logger := l.WithFields(logrus.Fields{
 		"handler":   handler,
 		"method":    s.escapeNewlines(r.Header.Get("X-Forwarded-Method")),
 		"proto":     s.escapeNewlines(r.Header.Get("X-Forwarded-Proto")),

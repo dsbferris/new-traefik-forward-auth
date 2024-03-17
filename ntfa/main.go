@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/dsbferris/new-traefik-forward-auth/appconfig"
@@ -10,17 +12,22 @@ import (
 )
 
 func main() {
-	c := appconfig.NewGlobalConfig()
-	l := logging.NewLogger(c.LogFormat, c.LogLevel)
+	config, err := appconfig.NewDefaultConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+	logger, err := logging.NewLogger(config.LogFormat, config.LogLevel)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	c.Validate(l)
-
-	s := server.NewServer(l, c)
+	s := server.NewServer(logger, config)
 
 	// Attach router to default server
 	http.HandleFunc("/", s.RootHandler)
 
-	l.WithField("config", c).Debug("Starting with config")
-	l.Infof("Listening on :%d", c.Port)
-	l.Info(http.ListenAndServe(fmt.Sprintf(":%d", c.Port), nil))
+	logger.Debug("Starting with config", slog.String("config", config.String()))
+	logger.Info("Listening on ", slog.Int("port", config.Port))
+	err = http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil)
+	logger.Info("Terminated", slog.String("error", err.Error()))
 }

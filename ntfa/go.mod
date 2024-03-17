@@ -6,6 +6,9 @@ require (
 	github.com/coreos/go-oidc/v3 v3.9.0
 	github.com/go-jose/go-jose/v3 v3.0.3
 	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/lmittmann/tint v1.0.4
+	github.com/mattn/go-colorable v0.1.13
+	github.com/mattn/go-isatty v0.0.20
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	github.com/thomseddon/go-flags v1.4.1-0.20190507184247-a3629c504486
