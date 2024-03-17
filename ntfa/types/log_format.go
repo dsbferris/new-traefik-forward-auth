@@ -13,6 +13,16 @@ const (
 	JSON
 )
 
+// UnmarshalFlag converts a string to a CookieDomain
+func (l *LogFormat) UnmarshalFlag(value string) error {
+	return l.Set(value)
+}
+
+// MarshalFlag converts a CookieDomain to a string
+func (l *LogFormat) MarshalFlag() (string, error) {
+	return l.String(), nil
+}
+
 // implements [encoding.TextMarshaler]
 func (l LogFormat) MarshalText() (value []byte, err error) {
 	return []byte(l.String()), nil

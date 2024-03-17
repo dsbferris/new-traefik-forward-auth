@@ -15,7 +15,7 @@ func (c *CommaSeparatedList) UnmarshalFlag(value string) error {
 
 // MarshalFlag converts an array back to a comma separated list
 func (c *CommaSeparatedList) MarshalFlag() (string, error) {
-	return strings.Join(*c, ","), nil
+	return c.String(), nil
 }
 
 // implements [encoding.TextMarshaler]

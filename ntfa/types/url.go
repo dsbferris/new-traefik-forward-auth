@@ -16,6 +16,16 @@ func ParseUrl(value string) (Url, error) {
 	return Url{URL: url}, nil
 }
 
+// UnmarshalFlag converts a string to a CookieDomain
+func (u *Url) UnmarshalFlag(value string) error {
+	return u.Set(value)
+}
+
+// MarshalFlag converts a CookieDomain to a string
+func (u *Url) MarshalFlag() (string, error) {
+	return u.String(), nil
+}
+
 // implements [encoding.TextMarshaler]
 func (u Url) MarshalText() (value []byte, err error) {
 	return []byte(u.String()), nil

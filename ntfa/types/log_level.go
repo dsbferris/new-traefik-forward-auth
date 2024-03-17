@@ -15,6 +15,16 @@ const (
 	ERROR LogLevel = LogLevel(slog.LevelError)
 )
 
+// UnmarshalFlag converts a string to a CookieDomain
+func (l *LogLevel) UnmarshalFlag(value string) error {
+	return l.Set(value)
+}
+
+// MarshalFlag converts a CookieDomain to a string
+func (l *LogLevel) MarshalFlag() (string, error) {
+	return l.String(), nil
+}
+
 // implements [encoding.TextMarshaler]
 func (l LogLevel) MarshalText() ([]byte, error) {
 	return []byte(l.String()), nil

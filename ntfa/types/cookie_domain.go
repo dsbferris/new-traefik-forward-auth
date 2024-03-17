@@ -32,13 +32,12 @@ func (c *CookieDomain) Match(host string) bool {
 
 // UnmarshalFlag converts a string to a CookieDomain
 func (c *CookieDomain) UnmarshalFlag(value string) error {
-	*c = *NewCookieDomain(value)
-	return nil
+	return c.Set(value)
 }
 
 // MarshalFlag converts a CookieDomain to a string
 func (c *CookieDomain) MarshalFlag() (string, error) {
-	return c.Domain, nil
+	return c.String(), nil
 }
 
 // implements [encoding.TextMarshaler]
