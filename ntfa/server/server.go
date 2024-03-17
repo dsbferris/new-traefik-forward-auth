@@ -8,8 +8,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/dsbferris/new-traefik-forward-auth/appconfig"
 	"github.com/dsbferris/new-traefik-forward-auth/auth"
 	"github.com/dsbferris/new-traefik-forward-auth/provider"
@@ -113,9 +111,9 @@ func (s *Server) authHandler(providerName string) http.HandlerFunc {
 		} else {
 			ok, err := s.config.TrustedIPNetworks.ConatainsIp(ipAddr)
 			if err != nil {
-				logger.WithField("error", err).Warn("Invalid forwarded for")
+				logger.Warn("invalid forwarded for", slog.String("error", err.Error()))
 			} else if ok {
-				logger.WithField("addr", ipAddr).Info("Authenticated remote address")
+				logger.Info("authenticated remote address", slog.String("addr", ipAddr))
 				w.WriteHeader(200)
 				return
 			}
@@ -124,7 +122,7 @@ func (s *Server) authHandler(providerName string) http.HandlerFunc {
 		// Get user from cookie
 		user, err := s.GetUserFromCookie(r)
 		if err != nil {
-			logger.WithField("error", err).Warn("invalid user")
+			logger.Warn("invalid user", slog.String("error", err.Error()))
 			unauthorized(w)
 			return
 		}
@@ -136,7 +134,7 @@ func (s *Server) authHandler(providerName string) http.HandlerFunc {
 		// Validate user
 		valid := s.auth.ValidateUser(*user)
 		if !valid {
-			logger.WithField("user", s.escapeNewlines(*user)).Warn("Invalid user")
+			logger.Warn("invalid user", slog.String("user", s.escapeNewlines(*user)))
 			unauthorized(w)
 			return
 		}
@@ -159,9 +157,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		// Check state
 		state := s.escapeNewlines(r.URL.Query().Get("state"))
 		if err := s.auth.ValidateState(state); err != nil {
-			logger.WithFields(logrus.Fields{
-				"error": err,
-			}).Warn("Error validating state")
+			logger.Warn("error validating state", slog.String("error", err.Error()))
 			http.Error(w, "Not authorized", 401)
 			return
 		}
@@ -177,10 +173,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		// Validate CSRF cookie against state
 		valid, providerName, redirect, err := s.auth.ValidateCSRFCookie(c, state)
 		if !valid {
-			logger.WithFields(logrus.Fields{
-				"error":       err,
-				"csrf_cookie": c,
-			}).Warn("Error validating csrf cookie")
+			logger.Warn("error validating csrf cookie", slog.String("error", err.Error()), slog.String("csrf_cookie", c.String()))
 			http.Error(w, "Not authorized", 401)
 			return
 		}
@@ -188,11 +181,11 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		// Get provider
 		p, err := s.config.GetConfiguredProvider(providerName)
 		if err != nil {
-			logger.WithFields(logrus.Fields{
-				"error":       err,
-				"csrf_cookie": c,
-				"provider":    providerName,
-			}).Warn("Invalid provider in csrf cookie")
+			logger.Warn("invalid provider in csrf cookie",
+				slog.String("error", err.Error()),
+				slog.String("csrf_cookie", c.String()),
+				slog.String("provider", providerName),
+			)
 			http.Error(w, "Not authorized", 401)
 			return
 		}
@@ -203,9 +196,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		// Validate redirect
 		redirectURL, err := s.auth.ValidateRedirect(r, redirect)
 		if err != nil {
-			logger.WithFields(logrus.Fields{
-				"received_redirect": redirect,
-			}).Warnf("Invalid redirect in CSRF. %v", err)
+			logger.Warn("invalid redirect in csrf", slog.String("error", err.Error()), slog.String("received_redirect", redirect))
 			http.Error(w, "Not authorized", 401)
 			return
 		}
@@ -221,7 +212,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		// Exchange code for token
 		token, err := p.ExchangeCode(s.auth.RedirectUri(r), r.URL.Query().Get("code"))
 		if err != nil {
-			logger.WithField("error", err).Error("Code exchange failed with provider")
+			logger.Error("Code exchange failed with provider", slog.String("error", err.Error()))
 			http.Error(w, "Service unavailable", 503)
 			return
 		}
@@ -229,18 +220,18 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		// Get user
 		user, err := p.GetUser(token, s.config.UserPath)
 		if err != nil {
-			logger.WithField("error", err).Error("Error getting user")
+			logger.Error("Error getting user", slog.String("error", err.Error()))
 			http.Error(w, "Service unavailable", 503)
 			return
 		}
 
 		// Generate cookie
 		http.SetCookie(w, s.auth.MakeCookie(r, user))
-		logger.WithFields(logrus.Fields{
-			"provider": providerName,
-			"redirect": redirect,
-			"user":     user,
-		}).Info("Successfully generated auth cookie, redirecting user.")
+		slog.Info("successfully generated auth cookie, redirecting user",
+			slog.String("provider", providerName),
+			slog.String("redirect", redirect),
+			slog.String("user", user),
+		)
 
 		// Redirect
 		http.Redirect(w, r, redirectURL.String(), http.StatusTemporaryRedirect)
@@ -259,9 +250,7 @@ func (s *Server) LoginHandler(providerName string) http.HandlerFunc {
 		redirect := s.auth.GetRedirectURI(r)
 		redirectURL, err := s.auth.ValidateLoginRedirect(r, redirect)
 		if err != nil {
-			logger.WithFields(logrus.Fields{
-				"received_redirect": redirect,
-			}).Warnf("Invalid redirect in login: %v", err)
+			logger.Warn("invalid redirect in login", slog.String("error", err.Error()), slog.String("received_redirect", redirect))
 			http.Error(w, "Invalid redirect: "+err.Error(), 400)
 			return
 		}
@@ -269,7 +258,7 @@ func (s *Server) LoginHandler(providerName string) http.HandlerFunc {
 		// Get user
 		user, err := s.GetUserFromCookie(r)
 		if err != nil {
-			logger.WithField("error", err).Warn("invalid user")
+			logger.Warn("invalid user", slog.String("error", err.Error()))
 			http.Error(w, "Invalid cookie", 400)
 			return
 		}
@@ -304,9 +293,7 @@ func (s *Server) LogoutHandler() http.HandlerFunc {
 		}
 		redirectURL, err := s.auth.ValidateLoginRedirect(r, redirect)
 		if err != nil {
-			logger.WithFields(logrus.Fields{
-				"received_redirect": redirect,
-			}).Warnf("Invalid redirect in login: %v", err)
+			logger.Warn("invalid redirect in login", slog.String("error", err.Error()), slog.String("received_redirect", redirect))
 			http.Error(w, "Invalid redirect: "+err.Error(), 400)
 			return
 		}
@@ -315,11 +302,11 @@ func (s *Server) LogoutHandler() http.HandlerFunc {
 	}
 }
 
-func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *http.Request, p provider.Provider, returnUrl string, forcePrompt bool) {
+func (s *Server) authRedirect(logger *slog.Logger, w http.ResponseWriter, r *http.Request, p provider.Provider, returnUrl string, forcePrompt bool) {
 	// Error indicates no cookie, generate nonce
 	nonce, err := s.auth.Nonce()
 	if err != nil {
-		logger.WithField("error", err).Error("Error generating nonce")
+		logger.Error("error generating nonce", slog.String("error", err.Error()))
 		http.Error(w, "Service unavailable", 503)
 		return
 	}
@@ -344,29 +331,25 @@ func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *ht
 	loginURL := p.GetLoginURL(s.auth.RedirectUri(r), s.auth.MakeState(returnUrl, p, nonce), forcePrompt)
 	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
 
-	logger.WithFields(logrus.Fields{
-		"csrf_cookie": csrf,
-		"login_url":   loginURL,
-	}).Debug("Set CSRF cookie and redirected to provider login url")
+	logger.Debug("set CSRF cookie and redirected to provider login url", slog.String("csrf_cookie", csrf.String()), slog.String("login_url", loginURL))
 }
 
-func (s *Server) requestLogger(r *http.Request, handler, msg string) *logrus.Entry {
+func (s *Server) requestLogger(r *http.Request, handler, msg string) *slog.Logger {
 	// Create logger
-	// TODO FIX THIS PIECE
-	l := logrus.StandardLogger()
-	logger := l.WithFields(logrus.Fields{
-		"handler":   handler,
-		"method":    s.escapeNewlines(r.Header.Get("X-Forwarded-Method")),
-		"proto":     s.escapeNewlines(r.Header.Get("X-Forwarded-Proto")),
-		"host":      s.escapeNewlines(r.Header.Get("X-Forwarded-Host")),
-		"uri":       s.escapeNewlines(r.Header.Get("X-Forwarded-Uri")),
-		"source_ip": s.escapeNewlines(r.Header.Get("X-Forwarded-For")),
-	})
 
-	// Log request
-	logger.WithFields(logrus.Fields{
-		"cookies": r.Cookies(),
-	}).Debug(msg)
+	var sb strings.Builder
+	for _, c := range r.Cookies() {
+		sb.WriteString(c.String())
+	}
 
+	logger := s.logger.With(
+		slog.String("handler", handler),
+		slog.String("method", s.escapeNewlines(r.Header.Get("X-Forwarded-Method"))),
+		slog.String("proto", s.escapeNewlines(r.Header.Get("X-Forwarded-Proto"))),
+		slog.String("host", s.escapeNewlines(r.Header.Get("X-Forwarded-Host"))),
+		slog.String("uri", s.escapeNewlines(r.Header.Get("X-Forwarded-Uri"))),
+		slog.String("source_ip", s.escapeNewlines(r.Header.Get("X-Forwarded-For"))),
+		slog.String("cookies", sb.String()),
+	)
 	return logger
 }

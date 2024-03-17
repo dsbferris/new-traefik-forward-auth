@@ -22,12 +22,24 @@ import (
 
 var authHost, _ = types.ParseUrl("auth.example.com")
 
+func newPseudoConfig() *appconfig.AppConfig {
+	c, err := appconfig.NewConfig([]string{
+		"--secret=veryverysecret",
+		"--providers.google.client-id=id",
+		"--providers.google.client-secret=secret",
+	})
+	if err != nil {
+		panic(err)
+	}
+	return c
+}
+
 func TestAuthValidateCookie(t *testing.T) {
 	r, _ := http.NewRequest("GET", "http://example.com", nil)
 
 	t.Run("should not pass empty with default", func(t *testing.T) {
 		assert := assert.New(t)
-		config, _ := appconfig.NewConfig([]string{""})
+		config := newPseudoConfig()
 		a := NewAuth(config)
 
 		_, err := a.ValidateCookie(r, &http.Cookie{Value: ""})
@@ -38,7 +50,7 @@ func TestAuthValidateCookie(t *testing.T) {
 
 	t.Run("should require 3 parts", func(t *testing.T) {
 		assert := assert.New(t)
-		config, _ := appconfig.NewConfig([]string{""})
+		config := newPseudoConfig()
 		a := NewAuth(config)
 		c := &http.Cookie{}
 
@@ -61,7 +73,7 @@ func TestAuthValidateCookie(t *testing.T) {
 
 	t.Run("should catch invalid mac", func(t *testing.T) {
 		assert := assert.New(t)
-		config, _ := appconfig.NewConfig([]string{""})
+		config := newPseudoConfig()
 		a := NewAuth(config)
 		c := &http.Cookie{}
 
@@ -74,7 +86,7 @@ func TestAuthValidateCookie(t *testing.T) {
 
 	t.Run("should catch expired", func(t *testing.T) {
 		assert := assert.New(t)
-		config, _ := appconfig.NewConfig([]string{""})
+		config := newPseudoConfig()
 		config.Lifetime = time.Second * time.Duration(-1)
 		a := NewAuth(config)
 
@@ -88,7 +100,7 @@ func TestAuthValidateCookie(t *testing.T) {
 
 	t.Run("should accept valid cookie", func(t *testing.T) {
 		assert := assert.New(t)
-		config, _ := appconfig.NewConfig([]string{""})
+		config := newPseudoConfig()
 		config.Lifetime = time.Second * time.Duration(10)
 		a := NewAuth(config)
 
@@ -104,7 +116,7 @@ func TestAuthValidateUser(t *testing.T) {
 	assert := assert.New(t)
 
 	t.Run("no whitelisting", func(t *testing.T) {
-		config, _ := appconfig.NewConfig([]string{""})
+		config := newPseudoConfig()
 		a := NewAuth(config)
 		var v bool
 		// Should allow any with no whitelist/domain is specified
@@ -115,7 +127,7 @@ func TestAuthValidateUser(t *testing.T) {
 	})
 
 	t.Run("domain whitelisting", func(t *testing.T) {
-		config, _ := appconfig.NewConfig([]string{""})
+		config := newPseudoConfig()
 		config.Domains = []string{"test.com"}
 		a := NewAuth(config)
 		var v bool
@@ -132,7 +144,7 @@ func TestAuthValidateUser(t *testing.T) {
 
 	})
 	t.Run("user whitelisting", func(t *testing.T) {
-		config, _ := appconfig.NewConfig([]string{""})
+		config := newPseudoConfig()
 		config.Whitelist = []string{"test@test.com"}
 		a := NewAuth(config)
 		var v bool
@@ -148,7 +160,8 @@ func TestAuthValidateUser(t *testing.T) {
 	})
 
 	t.Run("user and domain whitelisting, no matching either", func(t *testing.T) {
-		config, _ := appconfig.NewConfig([]string{""})
+
+		config := newPseudoConfig()
 		config.Domains = []string{"example.com"}
 		config.Whitelist = []string{"test@test.com"}
 		config.MatchWhitelistOrDomain = false
@@ -170,7 +183,8 @@ func TestAuthValidateUser(t *testing.T) {
 	})
 
 	t.Run("user and domain whitelisting, matching either", func(t *testing.T) {
-		config, _ := appconfig.NewConfig([]string{""})
+
+		config := newPseudoConfig()
 		config.Domains = []string{"example.com"}
 		config.Whitelist = []string{"test@test.com"}
 		config.MatchWhitelistOrDomain = true
@@ -215,7 +229,8 @@ func TestGetRedirectURI(t *testing.T) {
 			want: "/bar",
 		},
 	}
-	config, _ := appconfig.NewConfig([]string{""})
+
+	config := newPseudoConfig()
 	a := NewAuth(config)
 	for _, cc := range cases {
 		t.Run(cc.name, func(t *testing.T) {
@@ -234,7 +249,8 @@ func TestAuthValidateRedirect(t *testing.T) {
 
 	t.Run("validate redirect no auth host", func(t *testing.T) {
 		assert := assert.New(t)
-		config, _ := appconfig.NewConfig([]string{""})
+
+		config := newPseudoConfig()
 		a := NewAuth(config)
 		newRedirectRequest := func(urlStr string) *http.Request {
 			u, err := url.Parse(urlStr)
@@ -284,7 +300,8 @@ func TestAuthValidateRedirect(t *testing.T) {
 
 	t.Run("validate redirect auth host", func(t *testing.T) {
 		assert := assert.New(t)
-		config, _ := appconfig.NewConfig([]string{""})
+
+		config := newPseudoConfig()
 
 		config.AuthHost = authHost
 		config.CookieDomains = types.CookieDomains{types.NewCookieDomain("example.com")}
@@ -352,7 +369,8 @@ func TestRedirectUri(t *testing.T) {
 
 	t.Run("redirect uri no auth host", func(t *testing.T) {
 		// No Auth Host
-		config, _ := appconfig.NewConfig([]string{""})
+
+		config := newPseudoConfig()
 		a := NewAuth(config)
 
 		uri, err := url.Parse(a.RedirectUri(r))
@@ -363,7 +381,8 @@ func TestRedirectUri(t *testing.T) {
 
 	})
 	t.Run("redirect uri auth host no cookie domain", func(t *testing.T) {
-		config, _ := appconfig.NewConfig([]string{""})
+
+		config := newPseudoConfig()
 		config.AuthHost = authHost
 		a := NewAuth(config)
 		// With Auth URL but no matching cookie domain
@@ -377,7 +396,8 @@ func TestRedirectUri(t *testing.T) {
 
 	})
 	t.Run("redirect uri auth host", func(t *testing.T) {
-		config, _ := appconfig.NewConfig([]string{""})
+
+		config := newPseudoConfig()
 		config.AuthHost = authHost
 		config.CookieDomains = types.CookieDomains{types.NewCookieDomain("example.com")}
 		a := NewAuth(config)
@@ -393,7 +413,8 @@ func TestRedirectUri(t *testing.T) {
 	})
 
 	t.Run("redirect uri auth host cookie different domain", func(t *testing.T) {
-		config, _ := appconfig.NewConfig([]string{""})
+
+		config := newPseudoConfig()
 		config.AuthHost = authHost
 		config.CookieDomains = types.CookieDomains{types.NewCookieDomain("example.com")}
 		a := NewAuth(config)
@@ -420,7 +441,7 @@ func TestAuthMakeCookie(t *testing.T) {
 
 	t.Run("make cookie secure", func(t *testing.T) {
 
-		config, _ := appconfig.NewConfig([]string{""})
+		config := newPseudoConfig()
 		a := NewAuth(config)
 
 		c := a.MakeCookie(r, "test@example.com")
@@ -437,7 +458,8 @@ func TestAuthMakeCookie(t *testing.T) {
 	})
 
 	t.Run("make cookie insecure with name", func(t *testing.T) {
-		config, _ := appconfig.NewConfig([]string{""})
+
+		config := newPseudoConfig()
 		config.CookieName = "testname"
 		config.InsecureCookie = true
 		a := NewAuth(config)
@@ -455,7 +477,8 @@ func TestAuthMakeCSRFCookie(t *testing.T) {
 	r.Header.Add("X-Forwarded-Host", "app.example.com")
 
 	t.Run("make csrf cookie", func(t *testing.T) {
-		config, _ := appconfig.NewConfig([]string{""})
+
+		config := newPseudoConfig()
 		a := NewAuth(config)
 		// No cookie domain or auth url
 		c := a.MakeCSRFCookie(r, "12345678901234567890123456789012")
@@ -464,7 +487,8 @@ func TestAuthMakeCSRFCookie(t *testing.T) {
 	})
 
 	t.Run("make csrf cookie with cookie domain, no auth url", func(t *testing.T) {
-		config, _ := appconfig.NewConfig([]string{""})
+
+		config := newPseudoConfig()
 		config.CookieDomains = types.CookieDomains{types.NewCookieDomain("example.com")}
 		a := NewAuth(config)
 		// With cookie domain but no auth url
@@ -474,7 +498,8 @@ func TestAuthMakeCSRFCookie(t *testing.T) {
 	})
 
 	t.Run("make csrf cookie with cookie domain and auth url", func(t *testing.T) {
-		config, _ := appconfig.NewConfig([]string{""})
+
+		config := newPseudoConfig()
 		config.AuthHost = authHost
 		config.CookieDomains = types.CookieDomains{types.NewCookieDomain("example.com")}
 		a := NewAuth(config)
@@ -488,7 +513,8 @@ func TestAuthMakeCSRFCookie(t *testing.T) {
 
 func TestAuthClearCSRFCookie(t *testing.T) {
 	assert := assert.New(t)
-	config, _ := appconfig.NewConfig([]string{""})
+
+	config := newPseudoConfig()
 	a := NewAuth(config)
 	r, _ := http.NewRequest("GET", "http://example.com", nil)
 
@@ -501,7 +527,8 @@ func TestAuthClearCSRFCookie(t *testing.T) {
 
 func TestAuthValidateCSRFCookie(t *testing.T) {
 	assert := assert.New(t)
-	config, _ := appconfig.NewConfig([]string{""})
+
+	config := newPseudoConfig()
 	a := NewAuth(config)
 	c := &http.Cookie{}
 	state := ""
@@ -542,7 +569,8 @@ func TestAuthValidateCSRFCookie(t *testing.T) {
 
 func TestValidateState(t *testing.T) {
 	assert := assert.New(t)
-	config, _ := appconfig.NewConfig([]string{""})
+
+	config := newPseudoConfig()
 	a := NewAuth(config)
 	// Should require valid state
 	state := "12345678901234567890123456789012:"
@@ -558,7 +586,8 @@ func TestValidateState(t *testing.T) {
 
 func TestMakeState(t *testing.T) {
 	assert := assert.New(t)
-	config, _ := appconfig.NewConfig([]string{""})
+
+	config := newPseudoConfig()
 	a := NewAuth(config)
 	redirect := "http://example.com/hello"
 
@@ -580,7 +609,8 @@ func TestMakeState(t *testing.T) {
 
 func TestAuthNonce(t *testing.T) {
 	assert := assert.New(t)
-	config, _ := appconfig.NewConfig([]string{""})
+
+	config := newPseudoConfig()
 	a := NewAuth(config)
 	nonce1, err := a.Nonce()
 	assert.Nil(err, "error generating nonce")
