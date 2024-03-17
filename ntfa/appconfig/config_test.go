@@ -97,7 +97,7 @@ func TestConfigDefaults(t *testing.T) {
 	assert.False(c.InsecureCookie)
 	assert.Equal("_forward_auth", c.CookieName)
 	assert.Equal("_forward_auth_csrf", c.CSRFCookieName)
-	assert.Equal(c.Providers.Google.Name(), c.SelectedProvider.Name())
+	assert.Equal(&c.Providers.Google, c.SelectedProvider)
 	assert.Len(c.Domains, 0)
 	assert.Equal(types.CommaSeparatedList{"X-Forwarded-User"}, c.HeaderNames)
 	assert.Equal(time.Second*time.Duration(43200), c.Lifetime)
@@ -129,7 +129,7 @@ func TestConfigParseArgs(t *testing.T) {
 	// Check normal flags
 	assert.Equal("cookiename", c.CookieName)
 	assert.Equal("csrfcookiename", c.CSRFCookieName)
-	assert.Equal(c.Providers.OIDC.Name(), c.SelectedProvider.Name())
+	assert.Equal(&c.Providers.OIDC, c.SelectedProvider)
 	assert.Equal(8000, c.Port)
 	assert.Equal(time.Second*time.Duration(200), c.Lifetime, "lifetime should be read and converted to duration")
 }

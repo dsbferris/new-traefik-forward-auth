@@ -15,7 +15,7 @@ type Providers struct {
 	GenericOAuth GenericOAuth `group:"Generic OAuth2 Provider" namespace:"generic-oauth" env-namespace:"GENERIC_OAUTH"`
 }
 
-func (p Providers) GetAll() []Provider {
+func (p *Providers) GetAll() []Provider {
 	return []Provider{&p.Google, &p.OIDC, &p.GenericOAuth}
 }
 
