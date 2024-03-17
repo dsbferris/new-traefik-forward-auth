@@ -45,7 +45,7 @@ func (s *Server) buildRoutes() {
 	s.muxer.Handle(s.config.Path, s.AuthCallbackHandler())
 
 	// Add login / logout handler
-	s.muxer.Handle(s.config.Path+"/login", s.LoginHandler(s.config.DefaultProvider))
+	s.muxer.Handle(s.config.Path+"/login", s.LoginHandler())
 	s.muxer.Handle(s.config.Path+"/logout", s.LogoutHandler())
 
 	// Add health check handler
@@ -54,7 +54,7 @@ func (s *Server) buildRoutes() {
 	}))
 
 	// Add a default handler
-	s.muxer.Handle("/", s.authHandler(s.config.DefaultProvider))
+	s.muxer.Handle("/", s.authHandler())
 }
 
 // RootHandler Overwrites the request method, host and URL with those from the
@@ -94,8 +94,8 @@ func (s *Server) GetUserFromCookie(r *http.Request) (*string, error) {
 	return &user, nil
 }
 
-func (s *Server) authHandler(providerName string) http.HandlerFunc {
-	p, _ := s.config.GetConfiguredProvider(providerName)
+func (s *Server) authHandler() http.HandlerFunc {
+	p := s.config.SelectedProvider
 
 	unauthorized := func(w http.ResponseWriter) {
 		http.Error(w, "Unauthorized", 401)
@@ -156,7 +156,8 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 
 		// Check state
 		state := s.escapeNewlines(r.URL.Query().Get("state"))
-		if err := s.auth.ValidateState(state); err != nil {
+		err := s.auth.ValidateState(state)
+		if err != nil {
 			logger.Warn("error validating state", slog.String("error", err.Error()))
 			http.Error(w, "Not authorized", 401)
 			return
@@ -178,13 +179,13 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 			return
 		}
 
-		// Get provider
-		p, err := s.config.GetConfiguredProvider(providerName)
-		if err != nil {
+		// Validate provider
+		p := s.config.SelectedProvider
+		if p.Name() != providerName {
 			logger.Warn("invalid provider in csrf cookie",
-				slog.String("error", err.Error()),
+				slog.String("selected_provider", s.config.SelectedProvider.Name()),
+				slog.String("csrf_provider", providerName),
 				slog.String("csrf_cookie", c.String()),
-				slog.String("provider", providerName),
 			)
 			http.Error(w, "Not authorized", 401)
 			return
@@ -210,7 +211,9 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		}
 
 		// Exchange code for token
-		token, err := p.ExchangeCode(s.auth.RedirectUri(r), r.URL.Query().Get("code"))
+		redirectUri := s.auth.RedirectUri(r)
+		code := r.URL.Query().Get("code")
+		token, err := p.ExchangeCode(redirectUri, code)
 		if err != nil {
 			logger.Error("Code exchange failed with provider", slog.String("error", err.Error()))
 			http.Error(w, "Service unavailable", 503)
@@ -239,8 +242,8 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 }
 
 // LoginHandler logs a user in
-func (s *Server) LoginHandler(providerName string) http.HandlerFunc {
-	p, _ := s.config.GetConfiguredProvider(providerName)
+func (s *Server) LoginHandler() http.HandlerFunc {
+	p := s.config.SelectedProvider
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := s.requestLogger(r, "Login", "Handling login")

@@ -358,7 +358,7 @@ func TestServerDefaultProvider(t *testing.T) {
 	assert.Equal("/o/oauth2/auth", fwd.Path, "request with expired cookie should be redirected to google")
 
 	// Should use alternative default provider when set
-	config.DefaultProvider = "oidc"
+	config.SelectedProvider = &config.Providers.OIDC
 	config.Providers.OIDC.OAuthProvider.Config = &oauth2.Config{
 		Endpoint: oauth2.Endpoint{
 			AuthURL: "https://oidc.com/oidcauth",
@@ -452,10 +452,6 @@ func newDefaultConfig() *appconfig.AppConfig {
 		"--providers.google.client-secret=secret",
 		"--trusted-ip-networks=127.0.0.2",
 	})
-
-	// Setup the google providers without running all the config validation
-	config.Providers.Google.Setup()
-
 	return config
 }
 
