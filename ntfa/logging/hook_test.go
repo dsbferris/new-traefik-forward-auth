@@ -30,7 +30,7 @@ func TestHook(t *testing.T) {
 		assert.GreaterOrEqual(log.Time, start)
 		assert.LessOrEqual(log.Time, stop)
 		assert.Empty(log.Error)
-		assert.Empty(log.Raw)
+		assert.NotEmpty(log.Raw)
 	})
 
 	t.Run("test level and order", func(t *testing.T) {
