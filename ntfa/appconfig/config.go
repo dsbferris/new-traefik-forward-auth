@@ -34,9 +34,7 @@ type AppConfig struct {
 	Secret         string                   `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
 	UserPath       string                   `long:"user-id-path" env:"USER_ID_PATH" default:"email" description:"Dot notation path of a UserID for use with whitelist and X-Forwarded-User"`
 
-	Port           int                      `long:"port" env:"PORT" default:"4181" description:"Port to listen on"`
-	ProbeToken     types.CommaSeparatedList `long:"probe-token" env:"PROBE_TOKEN" env-delim:"," description:"Static probe token which is always passed"`
-	ProbeTokenUser string                   `long:"probe-token-user" env:"PROBE_TOKEN_USER" default:"probe" description:"User authenticated with static probe token"`
+	Port int `long:"port" env:"PORT" default:"4181" description:"Port to listen on"`
 
 	Providers provider.Providers `group:"providers" namespace:"providers" env-namespace:"PROVIDERS"`
 

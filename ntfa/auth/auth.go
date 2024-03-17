@@ -51,26 +51,13 @@ type Auth struct {
 	config *appconfig.AppConfig
 }
 
-func NewAuth(c *appconfig.AppConfig) *Auth {
-	return &Auth{config: c}
-}
-
-func (a *Auth) CheckProbeToken(cookie string) (user string, ok bool) {
-	for _, probeToken := range a.config.ProbeToken {
-		if cookie == probeToken {
-			return a.config.ProbeTokenUser, true
-		}
-	}
-	return "", false
+func NewAuth(config *appconfig.AppConfig) *Auth {
+	return &Auth{config: config}
 }
 
 // ValidateCookie verifies that a cookie matches the expected format of:
 // Cookie = hash(secret, cookie domain, user, expires)|expires|user
 func (a *Auth) ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
-	if user, ok := a.CheckProbeToken(c.Value); ok {
-		return user, nil
-	}
-
 	parts := strings.Split(c.Value, "|")
 
 	if len(parts) != 3 {

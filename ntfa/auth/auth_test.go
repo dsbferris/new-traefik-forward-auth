@@ -36,18 +36,6 @@ func TestAuthValidateCookie(t *testing.T) {
 		}
 	})
 
-	t.Run("empty probe token", func(t *testing.T) {
-		assert := assert.New(t)
-		config, _ := appconfig.NewConfig([]string{""})
-		config.ProbeToken = append(config.ProbeToken, "super-secret-token")
-		config.ProbeTokenUser = "toki"
-		a := NewAuth(config)
-
-		user, err := a.ValidateCookie(r, &http.Cookie{Value: "super-secret-token"})
-		assert.Nil(err, "valid request should not return an error")
-		assert.Equal("toki", user, "valid request should return user")
-	})
-
 	t.Run("should require 3 parts", func(t *testing.T) {
 		assert := assert.New(t)
 		config, _ := appconfig.NewConfig([]string{""})
