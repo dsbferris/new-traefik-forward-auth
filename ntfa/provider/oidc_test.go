@@ -218,7 +218,11 @@ func (s *OIDCServerEd25519) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"issuer":"`+s.url.String()+`",
 			"authorization_endpoint":"`+s.url.String()+`/auth",
 			"token_endpoint":"`+s.url.String()+`/token",
-			"jwks_uri":"`+s.url.String()+`/jwks"
+			"jwks_uri":"`+s.url.String()+`/jwks",
+			"id_token_signing_alg_values_supported": [
+				"`+oidc.EdDSA+`",
+				"`+oidc.RS256+`"
+			]
 		}`)
 	} else if r.URL.Path == "/token" {
 		// Token request

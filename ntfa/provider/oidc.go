@@ -55,23 +55,9 @@ func (o *OIDC) Setup() error {
 		Scopes: append([]string{oidc.ScopeOpenID}, o.Scopes...),
 	}
 
-	algorithms := []string{
-		oidc.RS256, // RSASSA-PKCS-v1.5 using SHA-256
-		// oidc.RS384, // RSASSA-PKCS-v1.5 using SHA-384
-		// oidc.RS512, // RSASSA-PKCS-v1.5 using SHA-512
-		// oidc.ES256, // ECDSA using P-256 and SHA-256
-		// oidc.ES384, // ECDSA using P-384 and SHA-384
-		// oidc.ES512, // ECDSA using P-521 and SHA-512
-		// oidc.PS256, // RSASSA-PSS using SHA256 and MGF1-SHA256
-		// oidc.PS384, // RSASSA-PSS using SHA384 and MGF1-SHA384
-		// oidc.PS512, // RSASSA-PSS using SHA512 and MGF1-SHA512
-		oidc.EdDSA, // Ed25519 using SHA-512
-	}
-
 	// Create OIDC verifier
 	o.verifier = o.provider.Verifier(&oidc.Config{
-		ClientID:             o.ClientID,
-		SupportedSigningAlgs: algorithms,
+		ClientID: o.ClientID,
 	})
 
 	return nil
