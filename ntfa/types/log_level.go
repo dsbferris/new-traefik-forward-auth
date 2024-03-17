@@ -9,10 +9,10 @@ import (
 type LogLevel slog.Level
 
 const (
-	DEBUG LogLevel = LogLevel(slog.LevelDebug)
-	INFO  LogLevel = LogLevel(slog.LevelInfo)
-	WARN  LogLevel = LogLevel(slog.LevelWarn)
-	ERROR LogLevel = LogLevel(slog.LevelError)
+	LEVEL_DEBUG LogLevel = LogLevel(slog.LevelDebug)
+	LEVEL_INFO  LogLevel = LogLevel(slog.LevelInfo)
+	LEVEL_WARN  LogLevel = LogLevel(slog.LevelWarn)
+	LEVEL_ERROR LogLevel = LogLevel(slog.LevelError)
 )
 
 // UnmarshalFlag converts a string to a CookieDomain
@@ -38,13 +38,13 @@ func (l *LogLevel) UnmarshalText(b []byte) error {
 // implements [flag.Value]
 func (l LogLevel) String() string {
 	switch l {
-	case DEBUG:
+	case LEVEL_DEBUG:
 		return "debug"
-	case INFO:
+	case LEVEL_INFO:
 		return "info"
-	case WARN:
+	case LEVEL_WARN:
 		return "warn"
-	case ERROR:
+	case LEVEL_ERROR:
 		return "error"
 	}
 	return ""
@@ -54,13 +54,13 @@ func (l LogLevel) String() string {
 func (l *LogLevel) Set(value string) error {
 	switch strings.ToLower(value) {
 	case "debug":
-		*l = DEBUG
+		*l = LEVEL_DEBUG
 	case "info":
-		*l = INFO
+		*l = LEVEL_INFO
 	case "warn":
-		*l = WARN
+		*l = LEVEL_WARN
 	case "error":
-		*l = ERROR
+		*l = LEVEL_ERROR
 	default:
 		return fmt.Errorf("unkown log format: %s", value)
 	}

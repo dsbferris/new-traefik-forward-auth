@@ -8,9 +8,9 @@ import (
 type LogFormat int
 
 const (
-	PRETTY LogFormat = iota
-	TEXT
-	JSON
+	FORMAT_PRETTY LogFormat = iota
+	FORMAT_TEXT
+	FORMAT_JSON
 )
 
 // UnmarshalFlag converts a string to a CookieDomain
@@ -36,11 +36,11 @@ func (l *LogFormat) UnmarshalText(value []byte) error {
 // implements [flag.Value]
 func (l LogFormat) String() string {
 	switch l {
-	case PRETTY:
+	case FORMAT_PRETTY:
 		return "pretty"
-	case TEXT:
+	case FORMAT_TEXT:
 		return "text"
-	case JSON:
+	case FORMAT_JSON:
 		return "json"
 	default:
 		return ""
@@ -51,11 +51,11 @@ func (l LogFormat) String() string {
 func (l *LogFormat) Set(value string) error {
 	switch strings.ToLower(string(value)) {
 	case "pretty":
-		*l = PRETTY
+		*l = FORMAT_PRETTY
 	case "text":
-		*l = TEXT
+		*l = FORMAT_TEXT
 	case "json":
-		*l = JSON
+		*l = FORMAT_JSON
 	default:
 		return fmt.Errorf("unkown log format: %d", l)
 	}
