@@ -1,10 +1,10 @@
 package provider
 
 import (
+	"fmt"
 	"net/url"
 	"testing"
 
-	"github.com/dsbferris/new-traefik-forward-auth/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,23 +35,9 @@ func TestGoogleSetup(t *testing.T) {
 	assert.Equal("https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email", p.Scope)
 	assert.Equal("", p.Prompt)
 
-	assert.Equal(&url.URL{
-		Scheme: "https",
-		Host:   "accounts.google.com",
-		Path:   "/o/oauth2/auth",
-	}, p.LoginURL.URL)
-
-	assert.Equal(&url.URL{
-		Scheme: "https",
-		Host:   "www.googleapis.com",
-		Path:   "/oauth2/v3/token",
-	}, p.TokenURL.URL)
-
-	assert.Equal(&url.URL{
-		Scheme: "https",
-		Host:   "www.googleapis.com",
-		Path:   "/oauth2/v2/userinfo",
-	}, p.UserURL.URL)
+	assert.Equal("https://accounts.google.com/o/oauth2/auth", p.LoginURL)
+	assert.Equal("https://www.googleapis.com/oauth2/v3/token", p.TokenURL)
+	assert.Equal("https://www.googleapis.com/oauth2/v2/userinfo", p.UserURL)
 }
 
 func TestGoogleGetLoginURL(t *testing.T) {
@@ -61,11 +47,7 @@ func TestGoogleGetLoginURL(t *testing.T) {
 		ClientSecret: "sectest",
 		Scope:        "scopetest",
 		Prompt:       "consent select_account",
-		LoginURL: types.Url{URL: &url.URL{
-			Scheme: "https",
-			Host:   "google.com",
-			Path:   "/auth",
-		}},
+		LoginURL:     "https://google.com/auth",
 	}
 
 	// Check url
@@ -103,18 +85,14 @@ func TestGoogleExchangeCode(t *testing.T) {
 		"token": expected.Encode(),
 	})
 	defer server.Close()
-
+	tokenUrl := fmt.Sprintf("%s://%s/token", serverURL.Scheme, serverURL.Host)
 	// Setup provider
 	p := Google{
 		ClientID:     "idtest",
 		ClientSecret: "sectest",
 		Scope:        "scopetest",
 		Prompt:       "consent select_account",
-		TokenURL: types.Url{URL: &url.URL{
-			Scheme: serverURL.Scheme,
-			Host:   serverURL.Host,
-			Path:   "/token",
-		}},
+		TokenURL:     tokenUrl,
 	}
 
 	token, err := p.ExchangeCode("http://example.com/_oauth", "code")
@@ -129,17 +107,14 @@ func TestGoogleGetUser(t *testing.T) {
 	server, serverURL := NewOAuthServer(t, nil)
 	defer server.Close()
 
+	userUrl := fmt.Sprintf("%s://%s/userinfo", serverURL.Scheme, serverURL.Host)
 	// Setup provider
 	p := Google{
 		ClientID:     "idtest",
 		ClientSecret: "sectest",
 		Scope:        "scopetest",
 		Prompt:       "consent select_account",
-		UserURL: types.Url{URL: &url.URL{
-			Scheme: serverURL.Scheme,
-			Host:   serverURL.Host,
-			Path:   "/userinfo",
-		}},
+		UserURL:      userUrl,
 	}
 
 	user, err := p.GetUser("123456789", "email")

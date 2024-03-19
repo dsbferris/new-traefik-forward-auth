@@ -87,6 +87,7 @@ func (config *AppConfig) parseFlags(args []string) error {
 		return godotenv.Load(s)
 	}
 	_, err := p.ParseArgs(args)
+
 	// on help print, exit with 0
 	if flags.WroteHelp(err) {
 		os.Exit(0)

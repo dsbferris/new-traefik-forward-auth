@@ -20,7 +20,7 @@ import (
  * Tests
  */
 
-var authHost, _ = types.ParseUrl("auth.example.com")
+var authHost = "auth.example.com"
 
 func newPseudoConfig() *appconfig.AppConfig {
 	c, err := appconfig.NewConfig([]string{

@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/dsbferris/new-traefik-forward-auth/types"
 	jose "github.com/go-jose/go-jose/v3"
 	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
@@ -175,11 +174,10 @@ func setupOIDCTest(t *testing.T, bodyValues map[string]map[string]string) (*OIDC
 	server, serverURL := NewOIDCServerEd25519(t, priv, pub, body)
 
 	// Setup provider
-	issuerUrl, _ := types.ParseUrl(serverURL.String())
 	p := OIDC{
 		ClientID:     "idtest",
 		ClientSecret: "sectest",
-		IssuerURL:    issuerUrl,
+		IssuerURL:    serverURL.String(),
 		OAuthProvider: OAuthProvider{
 			Scopes: []string{"profile", "email"},
 		},

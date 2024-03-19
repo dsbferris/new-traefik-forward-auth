@@ -15,7 +15,6 @@ import (
 
 	"github.com/dsbferris/new-traefik-forward-auth/appconfig"
 	"github.com/dsbferris/new-traefik-forward-auth/provider"
-	"github.com/dsbferris/new-traefik-forward-auth/types"
 )
 
 // Request Validation
@@ -130,7 +129,7 @@ func (a *Auth) ValidateUser(user string) bool {
 }
 
 // ValidateWhitelist checks if the email is in whitelist
-func (a *Auth) ValidateWhitelist(user string, whitelist types.CommaSeparatedList) bool {
+func (a *Auth) ValidateWhitelist(user string, whitelist []string) bool {
 	for _, whitelist := range whitelist {
 		if user == whitelist {
 			return true
@@ -140,7 +139,7 @@ func (a *Auth) ValidateWhitelist(user string, whitelist types.CommaSeparatedList
 }
 
 // ValidateDomains checks if the email matches a whitelisted domain
-func (a *Auth) ValidateDomains(user string, domains types.CommaSeparatedList) bool {
+func (a *Auth) ValidateDomains(user string, domains []string) bool {
 	parts := strings.Split(user, "@")
 	if len(parts) < 2 {
 		return false
@@ -246,7 +245,7 @@ func (a *Auth) RedirectUri(r *http.Request) string {
 
 // Should we use auth host + what it is
 func (a *Auth) UseAuthDomain(r *http.Request) (bool, string) {
-	if a.config.AuthHost.String() == "" {
+	if a.config.AuthHost == "" {
 		return false, ""
 	}
 
@@ -254,7 +253,7 @@ func (a *Auth) UseAuthDomain(r *http.Request) (bool, string) {
 	reqMatch, reqHost := a.MatchCookieDomains(r.Host)
 
 	// Do any of the auth hosts match a cookie domain?
-	authMatch, authHost := a.MatchCookieDomains(a.config.AuthHost.String())
+	authMatch, authHost := a.MatchCookieDomains(a.config.AuthHost)
 
 	// We need both to match the same domain
 	return reqMatch && authMatch && reqHost == authHost, reqHost

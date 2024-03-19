@@ -6,15 +6,14 @@ import (
 	"errors"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/dsbferris/new-traefik-forward-auth/types"
 	"golang.org/x/oauth2"
 )
 
 // OIDC provider
 type OIDC struct {
-	IssuerURL    types.Url `long:"issuer-url" env:"ISSUER_URL" description:"Issuer URL"`
-	ClientID     string    `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
-	ClientSecret string    `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
+	IssuerURL    string `long:"issuer-url" env:"ISSUER_URL" description:"Issuer URL"`
+	ClientID     string `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
+	ClientSecret string `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
 
 	OAuthProvider
 
@@ -30,17 +29,19 @@ func (o OIDC) Name() string {
 // Setup performs validation and setup
 func (o *OIDC) Setup() error {
 	// Check parms
-	if o.IssuerURL.String() == "" ||
+	if o.IssuerURL == "" ||
 		o.ClientID == "" ||
 		o.ClientSecret == "" {
 		return errors.New("providers.oidc.issuer-url, providers.oidc.client-id, providers.oidc.client-secret must be set")
 	}
+	// TODO valdidate  can be parsed into url
+	//url, err := url.Parse(value)
 
 	var err error
 	o.ctx = context.Background()
 
 	// Try to initiate provider
-	o.provider, err = oidc.NewProvider(o.ctx, o.IssuerURL.String())
+	o.provider, err = oidc.NewProvider(o.ctx, o.IssuerURL)
 	if err != nil {
 		return err
 	}

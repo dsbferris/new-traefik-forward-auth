@@ -12,9 +12,9 @@ import (
 // Tests
 
 var (
-	defaultAuthUrl, _  = types.ParseUrl("https://provider.com/oauth2/auth")
-	defaultTokenUrl, _ = types.ParseUrl("https://provider.com/oauth2/token")
-	defaultUserUrl, _  = types.ParseUrl("https://provider.com/oauth2/user")
+	defaultAuthUrl  = "https://provider.com/oauth2/auth"
+	defaultTokenUrl = "https://provider.com/oauth2/token"
+	defaultUserUrl  = "https://provider.com/oauth2/user"
 )
 
 func TestGenericOAuthName(t *testing.T) {
@@ -97,7 +97,7 @@ func TestGenericOAuthExchangeCode(t *testing.T) {
 	})
 	defer server.Close()
 
-	tokenUrl, _ := types.ParseUrl(serverURL.String() + "/token")
+	tokenUrl := serverURL.String() + "/token"
 	// Setup provider
 	p := GenericOAuth{
 		AuthURL:      defaultAuthUrl,
@@ -128,7 +128,7 @@ func TestGenericOAuthGetUser(t *testing.T) {
 	server, serverURL := NewOAuthServer(t, nil)
 	defer server.Close()
 
-	userUrl, _ := types.ParseUrl(serverURL.String() + "/userinfo")
+	userUrl := serverURL.String() + "/userinfo"
 	// Setup provider
 	p := GenericOAuth{
 		AuthURL:      defaultAuthUrl,

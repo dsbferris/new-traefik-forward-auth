@@ -198,17 +198,13 @@ func TestServerAuthCallback(t *testing.T) {
 
 	// Setup OAuth server
 	server, serverURL := NewOAuthServer(t)
+
+	tokenUrl := fmt.Sprintf("%s://%s/token", serverURL.Scheme, serverURL.Host)
+	userUrl := fmt.Sprintf("%s://%s/userinfo", serverURL.Scheme, serverURL.Host)
+
 	defer server.Close()
-	config.Providers.Google.TokenURL = types.Url{URL: &url.URL{
-		Scheme: serverURL.Scheme,
-		Host:   serverURL.Host,
-		Path:   "/token",
-	}}
-	config.Providers.Google.UserURL = types.Url{URL: &url.URL{
-		Scheme: serverURL.Scheme,
-		Host:   serverURL.Host,
-		Path:   "/userinfo",
-	}}
+	config.Providers.Google.TokenURL = tokenUrl
+	config.Providers.Google.UserURL = userUrl
 
 	// Should pass auth response request to callback
 	req := newHTTPRequest("GET", "http://example.com/_oauth")
@@ -248,16 +244,11 @@ func TestServerAuthCallbackExchangeFailure(t *testing.T) {
 	// Setup OAuth server
 	server, serverURL := NewFailingOAuthServer(t)
 	defer server.Close()
-	config.Providers.Google.TokenURL = types.Url{URL: &url.URL{
-		Scheme: serverURL.Scheme,
-		Host:   serverURL.Host,
-		Path:   "/token",
-	}}
-	config.Providers.Google.UserURL = types.Url{URL: &url.URL{
-		Scheme: serverURL.Scheme,
-		Host:   serverURL.Host,
-		Path:   "/userinfo",
-	}}
+
+	tokenUrl := fmt.Sprintf("%s://%s/token", serverURL.Scheme, serverURL.Host)
+	userUrl := fmt.Sprintf("%s://%s/userinfo", serverURL.Scheme, serverURL.Host)
+	config.Providers.Google.TokenURL = tokenUrl
+	config.Providers.Google.UserURL = userUrl
 
 	// Should handle failed code exchange
 	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:google:http://example.com")
@@ -274,18 +265,13 @@ func TestServerAuthCallbackUserFailure(t *testing.T) {
 	// Setup OAuth server
 	server, serverURL := NewOAuthServer(t)
 	defer server.Close()
-	config.Providers.Google.TokenURL = types.Url{URL: &url.URL{
-		Scheme: serverURL.Scheme,
-		Host:   serverURL.Host,
-		Path:   "/token",
-	}}
+	tokenUrl := fmt.Sprintf("%s://%s/token", serverURL.Scheme, serverURL.Host)
+	config.Providers.Google.TokenURL = tokenUrl
+
 	serverFail, serverFailURL := NewFailingOAuthServer(t)
 	defer serverFail.Close()
-	config.Providers.Google.UserURL = types.Url{URL: &url.URL{
-		Scheme: serverFailURL.Scheme,
-		Host:   serverFailURL.Host,
-		Path:   "/userinfo",
-	}}
+	userUrl := fmt.Sprintf("%s://%s/userinfo", serverFailURL.Scheme, serverFailURL.Host)
+	config.Providers.Google.UserURL = userUrl
 
 	// Should handle failed user request
 	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:google:http://example.com")
@@ -452,6 +438,7 @@ func newDefaultConfig() *appconfig.AppConfig {
 		"--providers.google.client-secret=secret",
 		"--trusted-ip-networks=127.0.0.2",
 	})
+	_ = config.Validate()
 	return config
 }
 

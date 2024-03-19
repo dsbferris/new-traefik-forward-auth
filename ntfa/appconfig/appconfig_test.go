@@ -21,7 +21,8 @@ func TestNewConfig(t *testing.T) {
 	t.Run("validate emtpy config", func(t *testing.T) {
 		assert := assert.New(t)
 		config, err := NewConfig([]string{})
-		assert.Nil(config)
+		assert.Nil(err)
+		err = config.Validate()
 		if assert.Error(err) {
 			assert.Equal(ErrSecretEmpty, err)
 		}
@@ -30,13 +31,15 @@ func TestNewConfig(t *testing.T) {
 	t.Run("validate with invalid path", func(t *testing.T) {
 
 		assert := assert.New(t)
-		_, err := NewConfig([]string{
+		config, err := NewConfig([]string{
 			"--secret=veryverysecret",
 			"--providers.google.client-id=id",
 			"--providers.google.client-secret=secret",
 
 			"--url-path=_oauthpath",
 		})
+		assert.Nil(err)
+		err = config.Validate()
 		if assert.Error(err) {
 			assert.Equal(ErrInvalidPath, err, "path must start with a slash slash")
 		}
@@ -44,10 +47,12 @@ func TestNewConfig(t *testing.T) {
 
 	t.Run("validate with empty header names", func(t *testing.T) {
 		assert := assert.New(t)
-		_, err := NewConfig([]string{
+		config, err := NewConfig([]string{
 			"--secret=veryverysecret",
 			"--header-names= ",
 		})
+		assert.Nil(err)
+		err = config.Validate()
 		if assert.Error(err) {
 			assert.Equal(ErrHeaderNamesEmpty, err)
 		}
@@ -55,9 +60,11 @@ func TestNewConfig(t *testing.T) {
 
 	t.Run("validate with no provider", func(t *testing.T) {
 		assert := assert.New(t)
-		_, err := NewConfig([]string{
+		config, err := NewConfig([]string{
 			"--secret=veryverysecret",
 		})
+		assert.Nil(err)
+		err = config.Validate()
 		if assert.Error(err) {
 			assert.Equal(ErrNoProvider, err)
 		}
@@ -65,7 +72,7 @@ func TestNewConfig(t *testing.T) {
 
 	t.Run("validate with multiple providers", func(t *testing.T) {
 		assert := assert.New(t)
-		_, err := NewConfig([]string{
+		config, err := NewConfig([]string{
 			"--secret=veryverysecret",
 			"--providers.google.client-id=id",
 			"--providers.google.client-secret=secret",
@@ -73,6 +80,8 @@ func TestNewConfig(t *testing.T) {
 			"--providers.oidc.client-secret=secret",
 			"--providers.oidc.issuer-url=https://accounts.google.com",
 		})
+		assert.Nil(err)
+		err = config.Validate()
 		if assert.Error(err) {
 			assert.Equal(ErrMultipleProvider, err)
 		}
@@ -82,38 +91,40 @@ func TestNewConfig(t *testing.T) {
 
 func TestConfigDefaults(t *testing.T) {
 	assert := assert.New(t)
-	c, err := NewConfig([]string{
+	config, err := NewConfig([]string{
 		"--secret=veryverysecret",
 		"--providers.google.client-id=id",
 		"--providers.google.client-secret=secret",
 	})
 	assert.Nil(err)
+	err = config.Validate()
+	assert.Nil(err)
 
-	assert.Equal(types.LEVEL_WARN, c.LogLevel)
-	assert.Equal(types.FORMAT_TEXT, c.LogFormat)
+	assert.Equal(types.LEVEL_WARN, config.LogLevel)
+	assert.Equal(types.FORMAT_TEXT, config.LogFormat)
 
-	assert.Equal("", c.AuthHost.String())
-	assert.Len(c.CookieDomains, 0)
-	assert.False(c.InsecureCookie)
-	assert.Equal("_forward_auth", c.CookieName)
-	assert.Equal("_forward_auth_csrf", c.CSRFCookieName)
-	assert.Equal(&c.Providers.Google, c.SelectedProvider)
-	assert.Len(c.Domains, 0)
-	assert.Equal(types.CommaSeparatedList{"X-Forwarded-User"}, c.HeaderNames)
-	assert.Equal(time.Second*time.Duration(43200), c.Lifetime)
-	assert.False(c.MatchWhitelistOrDomain)
-	assert.Equal("/_oauth", c.Path)
-	assert.Len(c.Whitelist, 0)
-	assert.Equal(c.Port, 4181)
+	assert.Equal("", config.AuthHost)
+	assert.Len(config.CookieDomains, 0)
+	assert.False(config.InsecureCookie)
+	assert.Equal("_forward_auth", config.CookieName)
+	assert.Equal("_forward_auth_csrf", config.CSRFCookieName)
+	assert.Equal(&config.Providers.Google, config.SelectedProvider)
+	assert.Len(config.Domains, 0)
+	assert.Equal([]string{"X-Forwarded-User"}, config.HeaderNames)
+	assert.Equal(time.Second*time.Duration(43200), config.Lifetime)
+	assert.False(config.MatchWhitelistOrDomain)
+	assert.Equal("/_oauth", config.Path)
+	assert.Len(config.Whitelist, 0)
+	assert.Equal(config.Port, 4181)
 
-	assert.Equal("select_account", c.Providers.Google.Prompt)
+	assert.Equal("select_account", config.Providers.Google.Prompt)
 
-	assert.Len(c.TrustedIPNetworks, 0)
+	assert.Len(config.TrustedIPNetworks, 0)
 }
 
 func TestConfigParseArgs(t *testing.T) {
 	assert := assert.New(t)
-	c, err := NewConfig([]string{
+	config, err := NewConfig([]string{
 		"--secret=veryverysecret",
 		"--providers.oidc.client-id=id",
 		"--providers.oidc.client-secret=secret",
@@ -124,20 +135,23 @@ func TestConfigParseArgs(t *testing.T) {
 		"--port=8000",
 		"--lifetime=200s",
 	})
-	require.Nil(t, err)
+	assert.Nil(err)
+	err = config.Validate()
+	assert.Nil(err)
 
 	// Check normal flags
-	assert.Equal("cookiename", c.CookieName)
-	assert.Equal("csrfcookiename", c.CSRFCookieName)
-	assert.Equal(&c.Providers.OIDC, c.SelectedProvider)
-	assert.Equal(8000, c.Port)
-	assert.Equal(time.Second*time.Duration(200), c.Lifetime, "lifetime should be read and converted to duration")
+	assert.Equal("cookiename", config.CookieName)
+	assert.Equal("csrfcookiename", config.CSRFCookieName)
+	assert.Equal(&config.Providers.OIDC, config.SelectedProvider)
+	assert.Equal(8000, config.Port)
+	assert.Equal(time.Second*time.Duration(200), config.Lifetime, "lifetime should be read and converted to duration")
 }
 
 func TestConfigParseUnknownFlags(t *testing.T) {
 	_, err := NewConfig([]string{
 		"--unknown=_oauthpath2",
 	})
+
 	if assert.Error(t, err) {
 		assert.Equal(t, "unknown flag: unknown", err.Error())
 	}
@@ -150,11 +164,12 @@ func TestConfigCommaSeperated(t *testing.T) {
 		"--providers.google.client-id=id",
 		"--providers.google.client-secret=secret",
 
-		"--whitelist=test@test.com,test2@test2.com",
+		"--whitelist=test@test.com",
+		"--whitelist=test2@test2.com",
 	})
 	require.Nil(t, err)
 
-	expected1 := types.CommaSeparatedList{"test@test.com", "test2@test2.com"}
+	expected1 := []string{"test@test.com", "test2@test2.com"}
 	assert.Equal(expected1, c.Whitelist, "should read legacy comma separated list whitelist")
 }
 
@@ -198,31 +213,14 @@ func TestConfigParseEnvironment(t *testing.T) {
 		types.NewCookieDomain("test1.com"),
 		types.NewCookieDomain("example.org"),
 	}, c.CookieDomains, "array variable should be read from environment COOKIE_DOMAIN")
-	assert.Equal(types.CommaSeparatedList{"test2.com", "example.org"}, c.Domains, "array variable should be read from environment DOMAIN")
-	assert.Equal(types.CommaSeparatedList{"test3.com", "example.org"}, c.Whitelist, "array variable should be read from environment WHITELIST")
+	assert.Equal([]string{"test2.com", "example.org"}, c.Domains, "array variable should be read from environment DOMAIN")
+	assert.Equal([]string{"test3.com", "example.org"}, c.Whitelist, "array variable should be read from environment WHITELIST")
 
 	os.Unsetenv("COOKIE_NAME")
 	os.Unsetenv("PROVIDERS_GOOGLE_CLIENT_ID")
 	os.Unsetenv("COOKIE_DOMAIN")
 	os.Unsetenv("DOMAIN")
 	os.Unsetenv("WHITELIST")
-}
-
-func TestConfigInvalidPath(t *testing.T) {
-
-}
-
-func TestConfigCommaSeparatedList(t *testing.T) {
-	assert := assert.New(t)
-	list := types.CommaSeparatedList{}
-
-	err := list.UnmarshalFlag("one,two")
-	assert.Nil(err)
-	assert.Equal(types.CommaSeparatedList{"one", "two"}, list, "should parse comma sepearated list")
-
-	marshal, err := list.MarshalFlag()
-	assert.Nil(err)
-	assert.Equal("one,two", marshal, "should marshal back to comma sepearated list")
 }
 
 func TestConfigTrustedNetworks(t *testing.T) {

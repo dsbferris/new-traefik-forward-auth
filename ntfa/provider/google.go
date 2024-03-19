@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-
-	"github.com/dsbferris/new-traefik-forward-auth/types"
 )
 
 // Google provider
@@ -17,9 +15,9 @@ type Google struct {
 	Scope        string
 	Prompt       string `long:"prompt" env:"PROMPT" default:"select_account" description:"Space separated list of OpenID prompt options"`
 
-	LoginURL types.Url
-	TokenURL types.Url
-	UserURL  types.Url
+	LoginURL string
+	TokenURL string
+	UserURL  string
 }
 
 // Name returns the name of the provider
@@ -35,22 +33,12 @@ func (g *Google) Setup() error {
 
 	// Set static values
 	g.Scope = "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email"
+	// TODO valdidate  can be parsed into url
+	//url, err := url.Parse(value)
 
-	loginUrl, err := types.ParseUrl("https://accounts.google.com/o/oauth2/auth")
-	if err != nil {
-		return err
-	}
-	tokenUrl, err := types.ParseUrl("https://www.googleapis.com/oauth2/v3/token")
-	if err != nil {
-		return err
-	}
-	userUrl, err := types.ParseUrl("https://www.googleapis.com/oauth2/v2/userinfo")
-	if err != nil {
-		return err
-	}
-	g.LoginURL = loginUrl
-	g.TokenURL = tokenUrl
-	g.UserURL = userUrl
+	g.LoginURL = "https://accounts.google.com/o/oauth2/auth"
+	g.TokenURL = "https://www.googleapis.com/oauth2/v3/token"
+	g.UserURL = "https://www.googleapis.com/oauth2/v2/userinfo"
 
 	return nil
 }
@@ -67,7 +55,8 @@ func (g Google) GetLoginURL(redirectURI, state string, forcePrompt bool) string 
 	q.Set("redirect_uri", redirectURI)
 	q.Set("state", state)
 
-	u := g.LoginURL.URL
+	u, _ := url.Parse(g.LoginURL)
+
 	u.RawQuery = q.Encode()
 
 	return u.String()
@@ -82,7 +71,7 @@ func (g Google) ExchangeCode(redirectURI, code string) (string, error) {
 	form.Set("redirect_uri", redirectURI)
 	form.Set("code", code)
 
-	res, err := http.PostForm(g.TokenURL.String(), form)
+	res, err := http.PostForm(g.TokenURL, form)
 	if err != nil {
 		return "", err
 	}
@@ -97,7 +86,7 @@ func (g Google) ExchangeCode(redirectURI, code string) (string, error) {
 // GetUser uses the given token and returns a userID located at the json path
 func (g Google) GetUser(token, UserPath string) (string, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", g.UserURL.String(), nil)
+	req, err := http.NewRequest("GET", g.UserURL, nil)
 	if err != nil {
 		return "", err
 	}
