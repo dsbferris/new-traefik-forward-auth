@@ -72,7 +72,7 @@ func NewConfig(args []string) (*AppConfig, error) {
 }
 
 func (config *AppConfig) parseFlags(args []string) error {
-	p := flags.NewParser(config, flags.Default|flags.IniDefault)
+	p := flags.NewParser(config, flags.Default)
 	// return error on unkown flags
 	p.UnknownOptionHandler = func(option string, arg flags.SplitArgument, args []string) ([]string, error) {
 		return args, fmt.Errorf("unknown flag: %v", option)
