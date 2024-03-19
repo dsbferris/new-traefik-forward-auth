@@ -11,8 +11,8 @@ type CookieDomain struct {
 }
 
 // NewCookieDomain creates a new CookieDomain from the given domain string
-func NewCookieDomain(domain string) *CookieDomain {
-	return &CookieDomain{
+func NewCookieDomain(domain string) CookieDomain {
+	return CookieDomain{
 		Domain:    domain,
 		SubDomain: fmt.Sprintf(".%s", domain),
 	}
@@ -47,6 +47,6 @@ func (c CookieDomain) String() string {
 
 // implements [flag.Value]
 func (c *CookieDomain) Set(value string) error {
-	*c = *NewCookieDomain(value)
+	*c = NewCookieDomain(value)
 	return nil
 }

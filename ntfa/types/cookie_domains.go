@@ -3,7 +3,7 @@ package types
 import "strings"
 
 // CookieDomains provides sypport for comma separated list of cookie domains
-type CookieDomains []*CookieDomain
+type CookieDomains []CookieDomain
 
 func NewCookieDomains(values ...string) (CookieDomains, error) {
 	c := CookieDomains{}

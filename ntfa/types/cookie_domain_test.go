@@ -32,11 +32,11 @@ func TestAuthCookieDomains(t *testing.T) {
 	err := cds.UnmarshalFlag("one.com,two.org")
 	assert.Nil(err)
 	expected := CookieDomains{
-		&CookieDomain{
+		CookieDomain{
 			Domain:    "one.com",
 			SubDomain: ".one.com",
 		},
-		&CookieDomain{
+		CookieDomain{
 			Domain:    "two.org",
 			SubDomain: ".two.org",
 		},
