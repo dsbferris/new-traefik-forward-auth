@@ -29,8 +29,8 @@ type LogConfig struct {
 }
 
 type WhitelistConfig struct {
-	Domains []string `long:"domains" env:"DOMAINS" env-delim:"," description:"Only allow given email domains, can be set multiple times"`
-	Users   []string `long:"users" env:"USERS" env-delim:"," description:"Only allow given Users, can be set multiple times"`
+	Domains []string `long:"domains" env:"DOMAINS" env-delim:"," description:"Only allow given email domains, can be set multiple times, ONLY comma separated as ENV"`
+	Users   []string `long:"users" env:"USERS" env-delim:"," description:"Only allow given Users, can be set multiple times, ONLY comma separated as ENV"`
 	// defaults to false
 	MatchUserOrDomain bool `long:"match-user-or-domain" env:"MATCH_USER_OR_DOMAIN" description:"If true, allow users that match *either* users or domains whitelist. If false and users whitelist is set, allow only users from users whitelist"`
 
@@ -55,7 +55,7 @@ type AppConfig struct {
 	Port     int    `long:"port" env:"PORT" default:"4181" description:"Port to listen on"`
 	AuthHost string `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 
-	HeaderNames []string `long:"header-names" env:"HEADER_NAMES" default:"X-Forwarded-User" description:"User header names, can be set multiple times"`
+	HeaderNames []string `long:"header-names" env:"HEADER_NAMES" default:"X-Forwarded-User" description:"User header names, can be set multiple times, ONLY comma separated as ENV"`
 	UrlPath     string   `long:"url-path" env:"URL_PATH" default:"/_oauth" description:"Callback URL Path"`
 	Secret      string   `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
 	UserPath    string   `long:"user-id-path" env:"USER_ID_PATH" default:"email" description:"Dot notation path of a UserID for use with whitelist and X-Forwarded-User"`
