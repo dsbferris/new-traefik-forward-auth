@@ -10,7 +10,8 @@ import (
 
 	"github.com/dsbferris/new-traefik-forward-auth/provider"
 	"github.com/dsbferris/new-traefik-forward-auth/types"
-	"github.com/thomseddon/go-flags"
+	"github.com/jessevdk/go-flags"
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -23,15 +24,18 @@ var (
 
 // AppConfig holds the runtime application appconfig
 type AppConfig struct {
+	Config  func(s string) error `short:"c" long:"config" env:"CONFIG" description:"Path to appconfig file" json:"-"`
+	EnvFile func(s string) error `short:"e" long:"env-file" description:"Path to env file" json:"-"`
+
 	LogLevel  types.LogLevel  `long:"log-level" env:"LOG_LEVEL" default:"warn" choice:"debug" choice:"info" choice:"warn" choice:"error" description:"Log level"`
 	LogFormat types.LogFormat `long:"log-format"  env:"LOG_FORMAT" default:"text" choice:"text" choice:"json" choice:"pretty" description:"Log format"`
 
-	AuthHost       types.Url            `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
-	Config         func(s string) error `long:"config" env:"CONFIG" description:"Path to appconfig file" json:"-"`
-	CookieDomains  types.CookieDomains  `long:"cookie-domains" env:"COOKIE_DOMAIN" env-delim:"," description:"Comma separated list of Domains to set auth cookie on"`
-	InsecureCookie bool                 `long:"insecure-cookie" env:"INSECURE_COOKIE" description:"Use insecure cookies"`
-	CookieName     string               `long:"cookie-name" env:"COOKIE_NAME" default:"_forward_auth" description:"Cookie Name"`
-	CSRFCookieName string               `long:"csrf-cookie-name" env:"CSRF_COOKIE_NAME" default:"_forward_auth_csrf" description:"CSRF Cookie Name"`
+	AuthHost types.Url `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
+
+	CookieDomains  types.CookieDomains `long:"cookie-domains" env:"COOKIE_DOMAIN" env-delim:"," description:"Comma separated list of Domains to set auth cookie on"`
+	InsecureCookie bool                `long:"insecure-cookie" env:"INSECURE_COOKIE" description:"Use insecure cookies"`
+	CookieName     string              `long:"cookie-name" env:"COOKIE_NAME" default:"_forward_auth" description:"Cookie Name"`
+	CSRFCookieName string              `long:"csrf-cookie-name" env:"CSRF_COOKIE_NAME" default:"_forward_auth_csrf" description:"CSRF Cookie Name"`
 
 	HeaderNames types.CommaSeparatedList `long:"header-names" env:"HEADER_NAMES" default:"X-Forwarded-User" description:"User header names, comma separated"`
 	Path        string                   `long:"url-path" env:"URL_PATH" default:"/_oauth" description:"Callback URL Path"`
@@ -107,31 +111,23 @@ func NewConfig(args []string) (*AppConfig, error) {
 }
 
 func (c *AppConfig) parseFlags(args []string) error {
-	p := flags.NewParser(c, flags.Default|flags.IniUnknownOptionHandler)
-	p.UnknownOptionHandler = c.parseUnknownFlag
+	p := flags.NewParser(c, flags.Default|flags.IniDefault)
+	p.UnknownOptionHandler = func(option string, arg flags.SplitArgument, args []string) ([]string, error) {
+		return args, fmt.Errorf("unknown flag: %v", option)
+	}
 
-	i := flags.NewIniParser(p)
 	c.Config = func(s string) error {
-		// Try parsing at as an ini
+		fmt.Println("ini parsing")
+		i := flags.NewIniParser(p)
 		return i.ParseFile(s)
 	}
-
-	_, err := p.ParseArgs(args)
-	if err != nil {
-		return handleFlagError(err)
+	c.EnvFile = func(s string) error {
+		fmt.Println("env file parsing")
+		return godotenv.Load(s)
 	}
-
-	return nil
-}
-
-func (c *AppConfig) parseUnknownFlag(option string, arg flags.SplitArgument, args []string) ([]string, error) {
-	return args, fmt.Errorf("unknown flag: %v", option)
-}
-
-func handleFlagError(err error) error {
-	flagsErr, ok := err.(*flags.Error)
-	if ok && flagsErr.Type == flags.ErrHelp {
-		// Library has just printed cli help
+	fmt.Println("parsing args")
+	_, err := p.ParseArgs(args)
+	if flags.WroteHelp(err) {
 		os.Exit(0)
 	}
 	return err

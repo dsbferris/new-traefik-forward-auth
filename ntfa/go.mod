@@ -6,11 +6,11 @@ require (
 	github.com/coreos/go-oidc/v3 v3.9.0
 	github.com/go-jose/go-jose/v3 v3.0.3
 	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/jessevdk/go-flags v1.5.0
 	github.com/lmittmann/tint v1.0.4
 	github.com/mattn/go-colorable v0.1.13
 	github.com/mattn/go-isatty v0.0.20
 	github.com/stretchr/testify v1.9.0
-	github.com/thomseddon/go-flags v1.4.1-0.20190507184247-a3629c504486
 	github.com/tidwall/gjson v1.17.1
 	golang.org/x/oauth2 v0.18.0
 )
@@ -18,7 +18,7 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/peterbourgon/ff/v4 v4.0.0-alpha.4 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
