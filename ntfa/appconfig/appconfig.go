@@ -68,24 +68,48 @@ func NewConfig(args []string) (*AppConfig, error) {
 	config := &AppConfig{}
 
 	err := config.parseFlags(args)
-	if err != nil {
-		return config, err
+	return config, err
+}
+
+func (config *AppConfig) parseFlags(args []string) error {
+	p := flags.NewParser(config, flags.Default|flags.IniDefault)
+	// return error on unkown flags
+	p.UnknownOptionHandler = func(option string, arg flags.SplitArgument, args []string) ([]string, error) {
+		return args, fmt.Errorf("unknown flag: %v", option)
 	}
+	// if config flag is set, execute ini parsing
+	config.Config = func(s string) error {
+		i := flags.NewIniParser(p)
+		return i.ParseFile(s)
+	}
+	// if env file flag is set, execute load env variables
+	config.EnvFile = func(s string) error {
+		return godotenv.Load(s)
+	}
+	_, err := p.ParseArgs(args)
+	// on help print, exit with 0
+	if flags.WroteHelp(err) {
+		os.Exit(0)
+	}
+	return err
+}
+
+func (config *AppConfig) Validate() error {
 
 	// Check for show stopper errors
 	if !strings.HasPrefix(config.Path, "/") {
-		return nil, ErrInvalidPath
+		return ErrInvalidPath
 	}
 	if len(config.Secret) == 0 || strings.TrimSpace(config.Secret) == "" {
-		return nil, ErrSecretEmpty
+		return ErrSecretEmpty
 	}
 
 	if len(config.HeaderNames) == 0 {
-		return nil, ErrHeaderNamesEmpty
+		return ErrHeaderNamesEmpty
 	}
 	for _, h := range config.HeaderNames {
 		if strings.TrimSpace(h) == "" {
-			return nil, ErrHeaderNamesEmpty
+			return ErrHeaderNamesEmpty
 		}
 	}
 
@@ -95,45 +119,22 @@ func NewConfig(args []string) (*AppConfig, error) {
 		err := p.Setup()
 		if err == nil {
 			if gotProvider {
-				return nil, ErrMultipleProvider
+				return ErrMultipleProvider
 			}
 			gotProvider = true
 			config.SelectedProvider = p
 		}
 	}
 	if !gotProvider {
-		return nil, ErrNoProvider
+		return ErrNoProvider
 	}
 
 	// TODO is more validation neccessary?
 
-	return config, nil
+	return nil
 }
 
-func (c *AppConfig) parseFlags(args []string) error {
-	p := flags.NewParser(c, flags.Default|flags.IniDefault)
-	p.UnknownOptionHandler = func(option string, arg flags.SplitArgument, args []string) ([]string, error) {
-		return args, fmt.Errorf("unknown flag: %v", option)
-	}
-
-	c.Config = func(s string) error {
-		fmt.Println("ini parsing")
-		i := flags.NewIniParser(p)
-		return i.ParseFile(s)
-	}
-	c.EnvFile = func(s string) error {
-		fmt.Println("env file parsing")
-		return godotenv.Load(s)
-	}
-	fmt.Println("parsing args")
-	_, err := p.ParseArgs(args)
-	if flags.WroteHelp(err) {
-		os.Exit(0)
-	}
-	return err
-}
-
-func (c AppConfig) String() string {
-	jsonConf, _ := json.Marshal(c)
+func (config AppConfig) String() string {
+	jsonConf, _ := json.Marshal(config)
 	return string(jsonConf)
 }
