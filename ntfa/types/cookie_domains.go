@@ -5,31 +5,21 @@ import "strings"
 // CookieDomains provides sypport for comma separated list of cookie domains
 type CookieDomains []*CookieDomain
 
+func NewCookieDomains(values ...string) (CookieDomains, error) {
+	c := CookieDomains{}
+	err := c.Set(strings.Join(values, ","))
+	return c, err
+}
+
 // UnmarshalFlag converts a comma separated list of cookie domains to an array
 // of CookieDomains
 func (c *CookieDomains) UnmarshalFlag(value string) error {
-	if len(value) > 0 {
-		for _, d := range strings.Split(value, ",") {
-			cookieDomain := NewCookieDomain(d)
-			*c = append(*c, cookieDomain)
-		}
-	}
-	return nil
+	return c.Set(value)
 }
 
 // MarshalFlag converts an array of CookieDomain to a comma seperated list
 func (c *CookieDomains) MarshalFlag() (string, error) {
 	return c.String(), nil
-}
-
-// implements [encoding.TextMarshaler]
-func (c CookieDomains) MarshalText() (value []byte, err error) {
-	return []byte(c.String()), nil
-}
-
-// implements [encoding.TextUnmarshaler]
-func (c *CookieDomains) UnmarshalText(value []byte) error {
-	return c.Set(string(value))
 }
 
 // implements [flag.Value]
@@ -43,12 +33,12 @@ func (c CookieDomains) String() string {
 
 // implements [flag.Value]
 func (c *CookieDomains) Set(value string) error {
-	split := strings.Split(value, ",")
-	l := make([]*CookieDomain, len(split))
-	for i, d := range split {
+	for _, d := range strings.Split(value, ",") {
+		if len(d) <= 0 {
+			continue
+		}
 		cookieDomain := NewCookieDomain(d)
-		l[i] = cookieDomain
+		*c = append(*c, cookieDomain)
 	}
-	*c = l
 	return nil
 }

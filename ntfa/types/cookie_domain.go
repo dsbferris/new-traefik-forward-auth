@@ -40,16 +40,6 @@ func (c *CookieDomain) MarshalFlag() (string, error) {
 	return c.String(), nil
 }
 
-// implements [encoding.TextMarshaler]
-func (c CookieDomain) MarshalText() (value []byte, err error) {
-	return []byte(c.String()), nil
-}
-
-// implements [encoding.TextUnmarshaler]
-func (c *CookieDomain) UnmarshalText(value []byte) error {
-	return c.Set(string(value))
-}
-
 // implements [flag.Value]
 func (c CookieDomain) String() string {
 	return c.Domain

@@ -12,14 +12,14 @@ const (
 	QUERY  TokenStyle = "query"
 )
 
-// implements [encoding.TextMarshaler]
-func (t TokenStyle) MarshalText() (value []byte, err error) {
-	return []byte(t), nil
+// UnmarshalFlag converts a string to a CookieDomain
+func (t *TokenStyle) UnmarshalFlag(value string) error {
+	return t.Set(value)
 }
 
-// implements [encoding.TextUnmarshaler]
-func (t *TokenStyle) UnmarshalText(value []byte) error {
-	return t.Set(string(value))
+// MarshalFlag converts a CookieDomain to a string
+func (t *TokenStyle) MarshalFlag() (string, error) {
+	return t.String(), nil
 }
 
 // implements [flag.Value]

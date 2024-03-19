@@ -7,22 +7,22 @@ import (
 
 type EmailList []*mail.Address
 
-// implements [encoding.TextMarshaler]
-func (l EmailList) MarshalText() (value []byte, err error) {
-	return []byte(l.String()), nil
+// UnmarshalFlag converts a string to a CookieDomain
+func (emailList *EmailList) UnmarshalFlag(value string) error {
+	return emailList.Set(value)
 }
 
-// implements [encoding.TextUnmarshaler]
-func (l *EmailList) UnmarshalText(value []byte) error {
-	return l.Set(string(value))
+// MarshalFlag converts a CookieDomain to a string
+func (emailList *EmailList) MarshalFlag() (string, error) {
+	return emailList.String(), nil
 }
 
 // implements [flag.Value]
-func (l EmailList) String() string {
+func (emailList EmailList) String() string {
 	var sb strings.Builder
-	for i, u := range l {
+	for i, u := range emailList {
 		sb.WriteString(u.String())
-		if i < len(l)-1 {
+		if i < len(emailList)-1 {
 			sb.WriteByte(',')
 		}
 	}
@@ -30,8 +30,16 @@ func (l EmailList) String() string {
 }
 
 // implements [flag.Value]
-func (l *EmailList) Set(value string) error {
-	var err error
-	*l, err = mail.ParseAddressList(value)
-	return err
+func (emailList *EmailList) Set(value string) error {
+	for _, e := range strings.Split(value, ",") {
+		if len(e) <= 0 {
+			continue
+		}
+		email, err := mail.ParseAddress(e)
+		if err != nil {
+			return err
+		}
+		*emailList = append(*emailList, email)
+	}
+	return nil
 }

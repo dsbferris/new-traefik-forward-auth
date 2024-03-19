@@ -25,16 +25,6 @@ func (l *LogLevel) MarshalFlag() (string, error) {
 	return l.String(), nil
 }
 
-// implements [encoding.TextMarshaler]
-func (l LogLevel) MarshalText() ([]byte, error) {
-	return []byte(l.String()), nil
-}
-
-// implements [encoding.TextUnmarshaler]
-func (l *LogLevel) UnmarshalText(b []byte) error {
-	return l.Set(string(b))
-}
-
 // implements [flag.Value]
 func (l LogLevel) String() string {
 	switch l {

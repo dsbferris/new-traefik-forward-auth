@@ -23,16 +23,6 @@ func (l *LogFormat) MarshalFlag() (string, error) {
 	return l.String(), nil
 }
 
-// implements [encoding.TextMarshaler]
-func (l LogFormat) MarshalText() (value []byte, err error) {
-	return []byte(l.String()), nil
-}
-
-// implements [encoding.TextUnmarshaler]
-func (l *LogFormat) UnmarshalText(value []byte) error {
-	return l.Set(string(value))
-}
-
 // implements [flag.Value]
 func (l LogFormat) String() string {
 	switch l {

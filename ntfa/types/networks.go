@@ -1,7 +1,6 @@
 package types
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -9,24 +8,14 @@ import (
 
 type Networks []*net.IPNet
 
-// UnmarshalFlag converts a string to a CookieDomain
-func (n *Networks) UnmarshalFlag(value string) error {
-	return n.Set(value)
-}
-
-// MarshalFlag converts a CookieDomain to a string
-func (n *Networks) MarshalFlag() (string, error) {
-	return n.String(), nil
-}
-
-func (n Networks) ConatainsIp(ip string) (bool, error) {
+func (networks Networks) ConatainsIp(ip string) (bool, error) {
 	addr := net.ParseIP(ip)
 	if addr == nil {
 		return false, fmt.Errorf("invalid ip address: '%s'", ip)
 	}
 
-	for _, n := range n {
-		if n.Contains(addr) {
+	for _, networks := range networks {
+		if networks.Contains(addr) {
 			return true, nil
 		}
 	}
@@ -34,22 +23,22 @@ func (n Networks) ConatainsIp(ip string) (bool, error) {
 	return false, nil
 }
 
-// implements [encoding.TextMarshaler]
-func (n Networks) MarshalText() (value []byte, err error) {
-	return []byte(n.String()), nil
+// UnmarshalFlag converts a string to a CookieDomain
+func (networks *Networks) UnmarshalFlag(value string) error {
+	return networks.Set(value)
 }
 
-// implements [encoding.TextUnmarshaler]
-func (n *Networks) UnmarshalText(value []byte) error {
-	return n.Set(string(value))
+// MarshalFlag converts a CookieDomain to a string
+func (networks *Networks) MarshalFlag() (string, error) {
+	return networks.String(), nil
 }
 
 // implements [flag.Value]
-func (n Networks) String() string {
+func (networks Networks) String() string {
 	sb := strings.Builder{}
-	for i, net := range n {
+	for i, net := range networks {
 		sb.WriteString(net.String())
-		if i < len(n)-1 {
+		if i < len(networks)-1 {
 			sb.WriteByte(',')
 		}
 	}
@@ -57,19 +46,21 @@ func (n Networks) String() string {
 }
 
 // implements [flag.Value]
-func (n *Networks) Set(value string) error {
-	valueList := strings.Split(value, ",")
-	networks := make([]*net.IPNet, len(valueList))
-	for i, v := range valueList {
+func (networks *Networks) Set(value string) error {
+	for _, v := range strings.Split(value, ",") {
+		if len(v) <= 0 {
+			continue
+		}
+		// adding the /32 allows for use of parseCIDR
 		if !strings.Contains(v, "/") {
 			v += "/32"
 		}
 		_, net, err := net.ParseCIDR(v)
 		if err != nil {
-			return errors.Join(fmt.Errorf("single ip addresses automatically get /32 added"), err)
+			fmt.Println("note: single ip addresses automatically get the suffix \"/32\" added")
+			return err
 		}
-		networks[i] = net
+		*networks = append(*networks, net)
 	}
-	*n = networks
 	return nil
 }
