@@ -102,7 +102,7 @@ func TestServerAuthHandlerInvalid(t *testing.T) {
 	// Should validate email
 	req = newDefaultHttpRequest("/foo")
 	c = a.MakeCookie(req, "test@example.com")
-	config.Domains = []string{"test.com"}
+	config.Whitelist.Domains = []string{"test.com"}
 
 	res, _ = doHttpRequest(req, c, config)
 	assert.Equal(401, res.StatusCode, "invalid email should not be authorised")
@@ -112,8 +112,8 @@ func TestServerAuthHandlerExpired(t *testing.T) {
 	assert := assert.New(t)
 	config := newDefaultConfig()
 	a := auth.NewAuth(config)
-	config.Lifetime = time.Second * time.Duration(-1)
-	config.Domains = []string{"test.com"}
+	config.Cookie.Lifetime = time.Second * time.Duration(-1)
+	config.Whitelist.Domains = []string{"test.com"}
 
 	// Should redirect expired cookie
 	req := newHTTPRequest("GET", "http://example.com/foo")
@@ -124,7 +124,7 @@ func TestServerAuthHandlerExpired(t *testing.T) {
 	// Check for CSRF cookie
 	var cookie *http.Cookie
 	for _, c := range res.Cookies() {
-		if strings.HasPrefix(c.Name, config.CSRFCookieName) {
+		if strings.HasPrefix(c.Name, config.Cookie.CSRFName) {
 			cookie = c
 		}
 	}
@@ -144,7 +144,7 @@ func TestServerAuthHandlerValid(t *testing.T) {
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
 	c := a.MakeCookie(req, "test@example.com")
-	config.Domains = []string{}
+	config.Whitelist.Domains = []string{}
 
 	res, _ := doHttpRequest(req, c, config)
 	assert.Equal(200, res.StatusCode, "valid request should be allowed")
@@ -292,7 +292,7 @@ func TestServerLogout(t *testing.T) {
 	// Check for cookie
 	var cookie *http.Cookie
 	for _, c := range res.Cookies() {
-		if c.Name == config.CookieName {
+		if c.Name == config.Cookie.Name {
 			cookie = c
 		}
 	}
@@ -307,7 +307,7 @@ func TestServerLogout(t *testing.T) {
 	// Check for cookie
 	cookie = nil
 	for _, c := range res.Cookies() {
-		if c.Name == config.CookieName {
+		if c.Name == config.Cookie.Name {
 			cookie = c
 		}
 	}
@@ -436,7 +436,7 @@ func newDefaultConfig() *appconfig.AppConfig {
 		"--secret=veryverysecret",
 		"--providers.google.client-id=id",
 		"--providers.google.client-secret=secret",
-		"--trusted-ip-networks=127.0.0.2",
+		"--whitelist.networks=127.0.0.2",
 	})
 	_ = config.Validate()
 	return config

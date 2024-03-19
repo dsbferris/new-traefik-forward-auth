@@ -27,39 +27,44 @@ type LogConfig struct {
 	Format types.LogFormat `short:"f" long:"format" env:"FORMAT" default:"text" choice:"text" choice:"json" choice:"pretty" description:"Log format"`
 }
 
+type WhitelistConfig struct {
+	Domains []string `long:"domains" env:"DOMAINS" env-delim:"," description:"Only allow given email domains, can be set multiple times"`
+	Users   []string `long:"users" env:"USERS" env-delim:"," description:"Only allow given Users, can be set multiple times"`
+	// defaults to false
+	MatchUserOrDomain bool `long:"match-user-or-domain" env:"MATCH_USER_OR_DOMAIN" description:"If true, allow users that match *either* users or domains whitelist. If false and users whitelist is set, allow only users from users whitelist"`
+
+	Networks types.Networks `long:"networks" env:"NETWORKS" env-delim:"," description:"List of trusted IP addresses or IP networks (in CIDR notation) that are considered authenticated, comma separated or set multiple times"`
+}
+
+type CookieConfig struct {
+	Domains  types.CookieDomains `long:"domains" env:"DOMAINS" env-delim:"," description:"List of Domains to set auth cookie on, comma separated or set multiple times"`
+	Insecure bool                `long:"insecure" env:"INSECURE" description:"Use insecure cookies"`
+	Name     string              `long:"name" env:"NAME" default:"_forward_auth" description:"Cookie Name"`
+	CSRFName string              `long:"csrf-name" env:"CSRF_NAME" default:"_forward_auth_csrf" description:"CSRF Cookie Name"`
+	Lifetime time.Duration       `long:"lifetime" env:"LIFETIME" default:"12h" description:"Forward Auth Cookie Lifetime. See time.ParseDuration() for valid values."`
+}
+
 // AppConfig holds the runtime application appconfig
 type AppConfig struct {
 	Config  func(s string) error `short:"c" long:"config" env:"CONFIG" description:"Path to appconfig file" json:"-"`
 	EnvFile func(s string) error `short:"e" long:"env-file" description:"Path to env file" json:"-"`
 
-	LogConfig LogConfig `group:"Log Options" namespace:"log" env-namespace:"log"`
+	Log LogConfig `group:"Log Options" namespace:"log" env-namespace:"LOG"`
 
+	Port     int    `long:"port" env:"PORT" default:"4181" description:"Port to listen on"`
 	AuthHost string `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 
-	CookieDomains  types.CookieDomains `long:"cookie-domains" env:"COOKIE_DOMAIN" env-delim:"," description:"Comma separated list of Domains to set auth cookie on"`
-	InsecureCookie bool                `long:"insecure-cookie" env:"INSECURE_COOKIE" description:"Use insecure cookies"`
-	CookieName     string              `long:"cookie-name" env:"COOKIE_NAME" default:"_forward_auth" description:"Cookie Name"`
-	CSRFCookieName string              `long:"csrf-cookie-name" env:"CSRF_COOKIE_NAME" default:"_forward_auth_csrf" description:"CSRF Cookie Name"`
-
 	HeaderNames []string `long:"header-names" env:"HEADER_NAMES" default:"X-Forwarded-User" description:"User header names, can be set multiple times"`
-	Path        string   `long:"url-path" env:"URL_PATH" default:"/_oauth" description:"Callback URL Path"`
+	UrlPath     string   `long:"url-path" env:"URL_PATH" default:"/_oauth" description:"Callback URL Path"`
 	Secret      string   `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
 	UserPath    string   `long:"user-id-path" env:"USER_ID_PATH" default:"email" description:"Dot notation path of a UserID for use with whitelist and X-Forwarded-User"`
 
-	Port int `long:"port" env:"PORT" default:"4181" description:"Port to listen on"`
+	Cookie    CookieConfig    `group:"Cookie Options" namespace:"cookie" env-namespace:"COOKIE"`
+	Whitelist WhitelistConfig `group:"Whitelist Options" namespace:"whitelist" env-namespace:"WHITELIST"`
 
-	Providers        provider.Providers `group:"providers" namespace:"providers" env-namespace:"PROVIDERS"`
+	Providers provider.Providers `group:"providers" namespace:"providers" env-namespace:"PROVIDERS"`
+
 	SelectedProvider provider.Provider
-
-	Domains   []string `long:"domain" env:"DOMAIN" env-delim:"," description:"Only allow given email domains, can be set multiple times"`
-	Whitelist []string `long:"whitelist" env:"WHITELIST" env-delim:"," description:"Only allow given UserID, can be set multiple times"`
-	// defaults to false
-	MatchWhitelistOrDomain bool `long:"match-whitelist-or-domain" env:"MATCH_WHITELIST_OR_DOMAIN" description:"If true, allow users that match *either* whitelist or domain. If false and whitelist is set, allow only users from whitelist"`
-
-	// Filled during transformations
-	Lifetime time.Duration `long:"lifetime" env:"LIFETIME" default:"12h" description:"Forward Auth Cookie Lifetime. See time.ParseDuration() for valid values."`
-
-	TrustedIPNetworks types.Networks `long:"trusted-ip-networks" env:"TRUSTED_IP_NETWORKS" env-delim:"," description:"Comma separated list of trusted IP addresses or IP networks (in CIDR notation) that are considered authenticated"`
 }
 
 // NewDefaultConfig creates a new global appconfig, parsed from command arguments
@@ -102,7 +107,7 @@ func (config *AppConfig) parseFlags(args []string) error {
 func (config *AppConfig) Validate() error {
 
 	// Check for show stopper errors
-	if !strings.HasPrefix(config.Path, "/") {
+	if !strings.HasPrefix(config.UrlPath, "/") {
 		return ErrInvalidPath
 	}
 	if len(config.Secret) == 0 || strings.TrimSpace(config.Secret) == "" {

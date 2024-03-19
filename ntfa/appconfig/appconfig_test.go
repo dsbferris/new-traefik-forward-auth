@@ -100,26 +100,26 @@ func TestConfigDefaults(t *testing.T) {
 	err = config.Validate()
 	assert.Nil(err)
 
-	assert.Equal(types.LEVEL_WARN, config.LogConfig.Level)
-	assert.Equal(types.FORMAT_TEXT, config.LogConfig.Format)
+	assert.Equal(types.LEVEL_WARN, config.Log.Level)
+	assert.Equal(types.FORMAT_TEXT, config.Log.Format)
 
 	assert.Equal("", config.AuthHost)
-	assert.Len(config.CookieDomains, 0)
-	assert.False(config.InsecureCookie)
-	assert.Equal("_forward_auth", config.CookieName)
-	assert.Equal("_forward_auth_csrf", config.CSRFCookieName)
+	assert.Len(config.Cookie.Domains, 0)
+	assert.False(config.Cookie.Insecure)
+	assert.Equal("_forward_auth", config.Cookie.Name)
+	assert.Equal("_forward_auth_csrf", config.Cookie.CSRFName)
 	assert.Equal(&config.Providers.Google, config.SelectedProvider)
-	assert.Len(config.Domains, 0)
+	assert.Len(config.Whitelist.Domains, 0)
 	assert.Equal([]string{"X-Forwarded-User"}, config.HeaderNames)
-	assert.Equal(time.Second*time.Duration(43200), config.Lifetime)
-	assert.False(config.MatchWhitelistOrDomain)
-	assert.Equal("/_oauth", config.Path)
-	assert.Len(config.Whitelist, 0)
+	assert.Equal(time.Second*time.Duration(43200), config.Cookie.Lifetime)
+	assert.False(config.Whitelist.MatchUserOrDomain)
+	assert.Equal("/_oauth", config.UrlPath)
+	assert.Len(config.Whitelist.Users, 0)
 	assert.Equal(config.Port, 4181)
 
 	assert.Equal("select_account", config.Providers.Google.Prompt)
 
-	assert.Len(config.TrustedIPNetworks, 0)
+	assert.Len(config.Whitelist.Networks, 0)
 }
 
 func TestConfigParseArgs(t *testing.T) {
@@ -130,21 +130,21 @@ func TestConfigParseArgs(t *testing.T) {
 		"--providers.oidc.client-secret=secret",
 		"--providers.oidc.issuer-url=https://accounts.google.com",
 
-		"--cookie-name=cookiename",
-		"--csrf-cookie-name", "csrfcookiename",
 		"--port=8000",
-		"--lifetime=200s",
+		"--cookie.name=cookiename",
+		"--cookie.csrf-name", "csrfcookiename",
+		"--cookie.lifetime=200s",
 	})
 	assert.Nil(err)
 	err = config.Validate()
 	assert.Nil(err)
 
 	// Check normal flags
-	assert.Equal("cookiename", config.CookieName)
-	assert.Equal("csrfcookiename", config.CSRFCookieName)
+	assert.Equal("cookiename", config.Cookie.Name)
+	assert.Equal("csrfcookiename", config.Cookie.CSRFName)
 	assert.Equal(&config.Providers.OIDC, config.SelectedProvider)
 	assert.Equal(8000, config.Port)
-	assert.Equal(time.Second*time.Duration(200), config.Lifetime, "lifetime should be read and converted to duration")
+	assert.Equal(time.Second*time.Duration(200), config.Cookie.Lifetime, "lifetime should be read and converted to duration")
 }
 
 func TestConfigParseUnknownFlags(t *testing.T) {
@@ -157,81 +157,81 @@ func TestConfigParseUnknownFlags(t *testing.T) {
 	}
 }
 
-func TestConfigCommaSeperated(t *testing.T) {
+func TestConfigSetMultipleTimes(t *testing.T) {
 	assert := assert.New(t)
-	c, err := NewConfig([]string{
+	config, err := NewConfig([]string{
 		"--secret=veryverysecret",
 		"--providers.google.client-id=id",
 		"--providers.google.client-secret=secret",
 
-		"--whitelist=test@test.com",
-		"--whitelist=test2@test2.com",
+		"--whitelist.domains=test@test.com",
+		"--whitelist.domains=test2@test2.com",
 	})
 	require.Nil(t, err)
 
 	expected1 := []string{"test@test.com", "test2@test2.com"}
-	assert.Equal(expected1, c.Whitelist, "should read legacy comma separated list whitelist")
+	assert.Equal(expected1, config.Whitelist.Domains, "should read whitelist when specified multiple times")
 }
 
 func TestConfigParseIni(t *testing.T) {
 	assert := assert.New(t)
 	configFile1, _ := filepath.Abs("../testfiles/config0")
 	configFile2, _ := filepath.Abs("../testfiles/config1")
-	c, err := NewConfig([]string{
+	config, err := NewConfig([]string{
 		"--secret=veryverysecret",
 		"--providers.google.client-id=id",
 		"--providers.google.client-secret=secret",
 
 		"--config=" + configFile1,
 		"--config=" + configFile2,
-		"--csrf-cookie-name=csrfcookiename",
+		"--cookie.csrf-name=csrfcookiename",
 	})
 	require.Nil(t, err)
 
-	assert.Equal("inicookiename", c.CookieName, "should be read from ini file")
-	assert.Equal("csrfcookiename", c.CSRFCookieName, "should be read from ini file")
-	assert.Equal("/two", c.Path, "variable in second ini file should override first ini file")
+	assert.Equal("inicookiename", config.Cookie.Name, "should be read from ini file")
+	assert.Equal("csrfcookiename", config.Cookie.CSRFName, "should be read from ini file")
+	assert.Equal("/two", config.UrlPath, "variable in second ini file should override first ini file")
 }
 
 func TestConfigParseEnvironment(t *testing.T) {
 	assert := assert.New(t)
-	os.Setenv("COOKIE_NAME", "env_cookie_name")
 	os.Setenv("PROVIDERS_GOOGLE_CLIENT_ID", "env_client_id")
-	os.Setenv("COOKIE_DOMAIN", "test1.com,example.org")
-	os.Setenv("DOMAIN", "test2.com,example.org")
-	os.Setenv("WHITELIST", "test3.com,example.org")
+	os.Setenv("COOKIE_NAME", "env_cookie_name")
+	os.Setenv("COOKIE_DOMAINS", "test1.com,example.org")
+	os.Setenv("WHITELIST_DOMAINS", "test2.com,example.org")
+	os.Setenv("WHITELIST_USERS", "test3.com,example.org")
 
-	c, err := NewConfig([]string{
+	config, err := NewConfig([]string{
 		"--secret=veryverysecret",
 		"--providers.google.client-secret=secret",
 	})
 	assert.Nil(err)
 
-	assert.Equal("env_cookie_name", c.CookieName, "variable should be read from environment")
-	assert.Equal("env_client_id", c.Providers.Google.ClientID, "namespace variable should be read from environment")
+	assert.Equal("env_cookie_name", config.Cookie.Name, "variable should be read from environment")
+	assert.Equal("env_client_id", config.Providers.Google.ClientID, "namespace variable should be read from environment")
 	assert.Equal(types.CookieDomains{
 		types.NewCookieDomain("test1.com"),
 		types.NewCookieDomain("example.org"),
-	}, c.CookieDomains, "array variable should be read from environment COOKIE_DOMAIN")
-	assert.Equal([]string{"test2.com", "example.org"}, c.Domains, "array variable should be read from environment DOMAIN")
-	assert.Equal([]string{"test3.com", "example.org"}, c.Whitelist, "array variable should be read from environment WHITELIST")
+	}, config.Cookie.Domains, "array variable should be read from environment COOKIE_DOMAIN")
+	assert.Equal([]string{"test2.com", "example.org"}, config.Whitelist.Domains, "array variable should be read from environment DOMAIN")
+	assert.Equal([]string{"test3.com", "example.org"}, config.Whitelist.Users, "array variable should be read from environment WHITELIST")
 
-	os.Unsetenv("COOKIE_NAME")
 	os.Unsetenv("PROVIDERS_GOOGLE_CLIENT_ID")
-	os.Unsetenv("COOKIE_DOMAIN")
-	os.Unsetenv("DOMAIN")
-	os.Unsetenv("WHITELIST")
+	os.Unsetenv("COOKIE_NAME")
+	os.Unsetenv("COOKIE_DOMAINS")
+	os.Unsetenv("WHITELIST_DOMAINS")
+	os.Unsetenv("WHITELIST_USERS")
 }
 
 func TestConfigTrustedNetworks(t *testing.T) {
 	assert := assert.New(t)
 
-	c, err := NewConfig([]string{
+	config, err := NewConfig([]string{
 		"--secret=veryverysecret",
 		"--providers.google.client-id=id",
 		"--providers.google.client-secret=secret",
 
-		"--trusted-ip-networks=1.2.3.4,30.1.0.0/16",
+		"--whitelist.networks=1.2.3.4,30.1.0.0/16",
 	})
 
 	assert.NoError(err)
@@ -247,7 +247,39 @@ func TestConfigTrustedNetworks(t *testing.T) {
 	}
 
 	for in, want := range table {
-		got, err := c.TrustedIPNetworks.ConatainsIp(in)
+		got, err := config.Whitelist.Networks.ConatainsIp(in)
+		assert.NoError(err)
+		assert.Equal(want, got, "ip address: %s", in)
+	}
+
+}
+
+func TestConfigTrustedNetworks2(t *testing.T) {
+	assert := assert.New(t)
+
+	config, err := NewConfig([]string{
+		"--secret=veryverysecret",
+		"--providers.google.client-id=id",
+		"--providers.google.client-secret=secret",
+
+		"--whitelist.networks=1.2.3.4",
+		"--whitelist.networks=30.1.0.0/16",
+	})
+
+	assert.NoError(err)
+
+	table := map[string]bool{
+		"1.2.3.3":      false,
+		"1.2.3.4":      true,
+		"1.2.3.5":      false,
+		"192.168.1.1":  false,
+		"30.1.0.1":     true,
+		"30.1.255.254": true,
+		"30.2.0.1":     false,
+	}
+
+	for in, want := range table {
+		got, err := config.Whitelist.Networks.ConatainsIp(in)
 		assert.NoError(err)
 		assert.Equal(want, got, "ip address: %s", in)
 	}

@@ -41,11 +41,11 @@ func (s *Server) buildRoutes() {
 	s.muxer = http.NewServeMux()
 
 	// Add callback handler
-	s.muxer.HandleFunc(s.config.Path, s.AuthCallbackHandler)
+	s.muxer.HandleFunc(s.config.UrlPath, s.AuthCallbackHandler)
 
 	// Add login / logout handler
-	s.muxer.HandleFunc(s.config.Path+"/login", s.LoginHandler)
-	s.muxer.HandleFunc(s.config.Path+"/logout", s.LogoutHandler)
+	s.muxer.HandleFunc(s.config.UrlPath+"/login", s.LoginHandler)
+	s.muxer.HandleFunc(s.config.UrlPath+"/logout", s.LogoutHandler)
 
 	// Add health check handler
 	s.muxer.Handle("/healthz", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
@@ -74,7 +74,7 @@ func (s *Server) RootHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) GetUserFromCookie(r *http.Request) (*string, error) {
 	// Get auth cookie
-	c, err := r.Cookie(s.config.CookieName)
+	c, err := r.Cookie(s.config.Cookie.Name)
 	if err != nil {
 		return nil, nil
 	}
@@ -105,7 +105,7 @@ func (s *Server) authHandler(w http.ResponseWriter, r *http.Request) {
 	if ipAddr == "" {
 		logger.Warn("missing x-forwarded-for header")
 	} else {
-		ok, err := s.config.TrustedIPNetworks.ConatainsIp(ipAddr)
+		ok, err := s.config.Whitelist.Networks.ConatainsIp(ipAddr)
 		if err != nil {
 			logger.Warn("invalid forwarded for", slog.String("error", err.Error()))
 		} else if ok {
@@ -309,7 +309,7 @@ func (s *Server) authRedirect(logger *slog.Logger, w http.ResponseWriter, r *htt
 
 	// clean existing CSRF cookie
 	for _, v := range r.Cookies() {
-		if strings.Contains(v.Name, s.config.CSRFCookieName) {
+		if strings.Contains(v.Name, s.config.Cookie.CSRFName) {
 			http.SetCookie(w, s.auth.ClearCSRFCookie(r, v))
 		}
 	}
@@ -317,7 +317,7 @@ func (s *Server) authRedirect(logger *slog.Logger, w http.ResponseWriter, r *htt
 	csrf := s.auth.MakeCSRFCookie(r, nonce)
 	http.SetCookie(w, csrf)
 
-	if !s.config.InsecureCookie && r.Header.Get("X-Forwarded-Proto") != "https" {
+	if !s.config.Cookie.Insecure && r.Header.Get("X-Forwarded-Proto") != "https" {
 		logger.Warn("You are using \"secure\" cookies for a request that was not " +
 			"received via https. You should either redirect to https or pass the " +
 			"\"insecure-cookie\" config option to permit cookies via http.")

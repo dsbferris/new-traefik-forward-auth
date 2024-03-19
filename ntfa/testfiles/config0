@@ -1,3 +1,3 @@
-cookie-name=inicookiename
-csrf-cookie-name=inicsrfcookiename
+cookie.name=inicookiename
+cookie.csrf-name=inicsrfcookiename
 url-path=/one

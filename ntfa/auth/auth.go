@@ -98,8 +98,8 @@ func (a *Auth) ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
 // a permitted domain, as defined by the "domains" config parameter
 func (a *Auth) ValidateUser(user string) bool {
 	// Use global config by default
-	whitelist := a.config.Whitelist
-	domains := a.config.Domains
+	whitelist := a.config.Whitelist.Users
+	domains := a.config.Whitelist.Domains
 
 	// Do we have any validation to perform?
 	if len(whitelist) == 0 && len(domains) == 0 {
@@ -113,7 +113,7 @@ func (a *Auth) ValidateUser(user string) bool {
 		}
 
 		// If we're not matching *either*, stop here
-		if !a.config.MatchWhitelistOrDomain {
+		if !a.config.Whitelist.MatchUserOrDomain {
 			return false
 		}
 	}
@@ -237,10 +237,10 @@ func (a *Auth) CurrentUrl(r *http.Request) string {
 func (a *Auth) RedirectUri(r *http.Request) string {
 	if use, _ := a.UseAuthDomain(r); use {
 		p := r.Header.Get("X-Forwarded-Proto")
-		return fmt.Sprintf("%s://%s%s", p, a.config.AuthHost, a.config.Path)
+		return fmt.Sprintf("%s://%s%s", p, a.config.AuthHost, a.config.UrlPath)
 	}
 
-	return fmt.Sprintf("%s%s", a.RedirectBase(r), a.config.Path)
+	return fmt.Sprintf("%s%s", a.RedirectBase(r), a.config.UrlPath)
 }
 
 // Should we use auth host + what it is
@@ -268,12 +268,12 @@ func (a *Auth) MakeCookie(r *http.Request, user string) *http.Cookie {
 	value := fmt.Sprintf("%s|%d|%s", mac, expires.Unix(), user)
 
 	return &http.Cookie{
-		Name:     a.config.CookieName,
+		Name:     a.config.Cookie.Name,
 		Value:    value,
 		Path:     "/",
 		Domain:   a.CookieDomain(r),
 		HttpOnly: true,
-		Secure:   !a.config.InsecureCookie,
+		Secure:   !a.config.Cookie.Insecure,
 		Expires:  expires,
 	}
 }
@@ -281,18 +281,18 @@ func (a *Auth) MakeCookie(r *http.Request, user string) *http.Cookie {
 // ClearCookie clears the auth cookie
 func (a *Auth) ClearCookie(r *http.Request) *http.Cookie {
 	return &http.Cookie{
-		Name:     a.config.CookieName,
+		Name:     a.config.Cookie.Name,
 		Value:    "",
 		Path:     "/",
 		Domain:   a.CookieDomain(r),
 		HttpOnly: true,
-		Secure:   !a.config.InsecureCookie,
+		Secure:   !a.config.Cookie.Insecure,
 		Expires:  time.Now().Local().Add(time.Hour * -1),
 	}
 }
 
 func (a *Auth) buildCSRFCookieName(nonce string) string {
-	return a.config.CSRFCookieName + "_" + nonce[:6]
+	return a.config.Cookie.CSRFName + "_" + nonce[:6]
 }
 
 // MakeCSRFCookie makes a csrf cookie (used during login only)
@@ -307,7 +307,7 @@ func (a *Auth) MakeCSRFCookie(r *http.Request, nonce string) *http.Cookie {
 		Path:     "/",
 		Domain:   a.CsrfCookieDomain(r),
 		HttpOnly: true,
-		Secure:   !a.config.InsecureCookie,
+		Secure:   !a.config.Cookie.Insecure,
 		Expires:  time.Now().Local().Add(time.Hour * 1),
 	}
 }
@@ -320,7 +320,7 @@ func (a *Auth) ClearCSRFCookie(r *http.Request, c *http.Cookie) *http.Cookie {
 		Path:     "/",
 		Domain:   a.CsrfCookieDomain(r),
 		HttpOnly: true,
-		Secure:   !a.config.InsecureCookie,
+		Secure:   !a.config.Cookie.Insecure,
 		Expires:  time.Now().Local().Add(time.Hour * -1),
 	}
 }
@@ -403,7 +403,7 @@ func (a *Auth) MatchCookieDomains(domain string) (bool, string) {
 	// Remove port
 	p := strings.Split(domain, ":")
 
-	for _, d := range a.config.CookieDomains {
+	for _, d := range a.config.Cookie.Domains {
 		if d.Match(p[0]) {
 			return true, d.Domain
 		}
@@ -424,5 +424,5 @@ func (a *Auth) CookieSignature(r *http.Request, email, expires string) string {
 
 // Get cookie expiry
 func (a *Auth) CookieExpiry() time.Time {
-	return time.Now().Local().Add(a.config.Lifetime)
+	return time.Now().Local().Add(a.config.Cookie.Lifetime)
 }

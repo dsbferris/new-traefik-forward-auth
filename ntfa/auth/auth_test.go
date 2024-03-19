@@ -87,7 +87,7 @@ func TestAuthValidateCookie(t *testing.T) {
 	t.Run("should catch expired", func(t *testing.T) {
 		assert := assert.New(t)
 		config := newPseudoConfig()
-		config.Lifetime = time.Second * time.Duration(-1)
+		config.Cookie.Lifetime = time.Second * time.Duration(-1)
 		a := NewAuth(config)
 
 		c := &http.Cookie{}
@@ -101,7 +101,7 @@ func TestAuthValidateCookie(t *testing.T) {
 	t.Run("should accept valid cookie", func(t *testing.T) {
 		assert := assert.New(t)
 		config := newPseudoConfig()
-		config.Lifetime = time.Second * time.Duration(10)
+		config.Cookie.Lifetime = time.Second * time.Duration(10)
 		a := NewAuth(config)
 
 		c := &http.Cookie{}
@@ -128,7 +128,7 @@ func TestAuthValidateUser(t *testing.T) {
 
 	t.Run("domain whitelisting", func(t *testing.T) {
 		config := newPseudoConfig()
-		config.Domains = []string{"test.com"}
+		config.Whitelist.Domains = []string{"test.com"}
 		a := NewAuth(config)
 		var v bool
 
@@ -145,7 +145,7 @@ func TestAuthValidateUser(t *testing.T) {
 	})
 	t.Run("user whitelisting", func(t *testing.T) {
 		config := newPseudoConfig()
-		config.Whitelist = []string{"test@test.com"}
+		config.Whitelist.Users = []string{"test@test.com"}
 		a := NewAuth(config)
 		var v bool
 		// Should block non whitelisted email address
@@ -162,9 +162,9 @@ func TestAuthValidateUser(t *testing.T) {
 	t.Run("user and domain whitelisting, no matching either", func(t *testing.T) {
 
 		config := newPseudoConfig()
-		config.Domains = []string{"example.com"}
-		config.Whitelist = []string{"test@test.com"}
-		config.MatchWhitelistOrDomain = false
+		config.Whitelist.Domains = []string{"example.com"}
+		config.Whitelist.Users = []string{"test@test.com"}
+		config.Whitelist.MatchUserOrDomain = false
 		a := NewAuth(config)
 		var v bool
 		// Should allow only matching email address when
@@ -185,9 +185,9 @@ func TestAuthValidateUser(t *testing.T) {
 	t.Run("user and domain whitelisting, matching either", func(t *testing.T) {
 
 		config := newPseudoConfig()
-		config.Domains = []string{"example.com"}
-		config.Whitelist = []string{"test@test.com"}
-		config.MatchWhitelistOrDomain = true
+		config.Whitelist.Domains = []string{"example.com"}
+		config.Whitelist.Users = []string{"test@test.com"}
+		config.Whitelist.MatchUserOrDomain = true
 		a := NewAuth(config)
 		var v bool
 		// Should allow either matching domain or email address when
@@ -304,7 +304,7 @@ func TestAuthValidateRedirect(t *testing.T) {
 		config := newPseudoConfig()
 
 		config.AuthHost = authHost
-		config.CookieDomains = types.CookieDomains{types.NewCookieDomain("example.com")}
+		config.Cookie.Domains = types.CookieDomains{types.NewCookieDomain("example.com")}
 		a := NewAuth(config)
 		newRedirectRequest := func(urlStr string) *http.Request {
 			u, err := url.Parse(urlStr)
@@ -399,7 +399,7 @@ func TestRedirectUri(t *testing.T) {
 
 		config := newPseudoConfig()
 		config.AuthHost = authHost
-		config.CookieDomains = types.CookieDomains{types.NewCookieDomain("example.com")}
+		config.Cookie.Domains = types.CookieDomains{types.NewCookieDomain("example.com")}
 		a := NewAuth(config)
 		// With correct Auth URL + cookie domain
 
@@ -416,7 +416,7 @@ func TestRedirectUri(t *testing.T) {
 
 		config := newPseudoConfig()
 		config.AuthHost = authHost
-		config.CookieDomains = types.CookieDomains{types.NewCookieDomain("example.com")}
+		config.Cookie.Domains = types.CookieDomains{types.NewCookieDomain("example.com")}
 		a := NewAuth(config)
 		// With Auth URL + cookie domain, but from different domain
 		// - will not use auth host
@@ -453,15 +453,15 @@ func TestAuthMakeCookie(t *testing.T) {
 		assert.Equal("/", c.Path)
 		assert.Equal("app.example.com", c.Domain)
 		assert.True(c.Secure)
-		expires := time.Now().Local().Add(config.Lifetime)
+		expires := time.Now().Local().Add(config.Cookie.Lifetime)
 		assert.WithinDuration(expires, c.Expires, 10*time.Second)
 	})
 
 	t.Run("make cookie insecure with name", func(t *testing.T) {
 
 		config := newPseudoConfig()
-		config.CookieName = "testname"
-		config.InsecureCookie = true
+		config.Cookie.Name = "testname"
+		config.Cookie.Insecure = true
 		a := NewAuth(config)
 
 		c := a.MakeCookie(r, "test@example.com")
@@ -489,7 +489,7 @@ func TestAuthMakeCSRFCookie(t *testing.T) {
 	t.Run("make csrf cookie with cookie domain, no auth url", func(t *testing.T) {
 
 		config := newPseudoConfig()
-		config.CookieDomains = types.CookieDomains{types.NewCookieDomain("example.com")}
+		config.Cookie.Domains = types.CookieDomains{types.NewCookieDomain("example.com")}
 		a := NewAuth(config)
 		// With cookie domain but no auth url
 		c := a.MakeCSRFCookie(r, "12222278901234567890123456789012")
@@ -501,7 +501,7 @@ func TestAuthMakeCSRFCookie(t *testing.T) {
 
 		config := newPseudoConfig()
 		config.AuthHost = authHost
-		config.CookieDomains = types.CookieDomains{types.NewCookieDomain("example.com")}
+		config.Cookie.Domains = types.CookieDomains{types.NewCookieDomain("example.com")}
 		a := NewAuth(config)
 		// With cookie domain and auth url
 		c := a.MakeCSRFCookie(r, "12333378901234567890123456789012")
