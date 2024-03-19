@@ -100,8 +100,8 @@ func TestConfigDefaults(t *testing.T) {
 	err = config.Validate()
 	assert.Nil(err)
 
-	assert.Equal(types.LEVEL_WARN, config.LogLevel)
-	assert.Equal(types.FORMAT_TEXT, config.LogFormat)
+	assert.Equal(types.LEVEL_WARN, config.LogConfig.Level)
+	assert.Equal(types.FORMAT_TEXT, config.LogConfig.Format)
 
 	assert.Equal("", config.AuthHost)
 	assert.Len(config.CookieDomains, 0)

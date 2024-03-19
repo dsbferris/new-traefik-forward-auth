@@ -19,7 +19,7 @@ func main() {
 	if err := config.Validate(); err != nil {
 		log.Fatal(err)
 	}
-	logger, err := logging.NewLogger(config.LogFormat, config.LogLevel)
+	logger, err := logging.NewLogger(config.LogConfig.Format, config.LogConfig.Level)
 	if err != nil {
 		log.Fatal(err)
 	}

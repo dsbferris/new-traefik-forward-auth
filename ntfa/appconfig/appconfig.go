@@ -22,13 +22,17 @@ var (
 	ErrNoProvider       = errors.New("no provider set")
 )
 
+type LogConfig struct {
+	Level  types.LogLevel  `short:"l" long:"level" env:"LEVEL" default:"warn" choice:"debug" choice:"info" choice:"warn" choice:"error" description:"Log level"`
+	Format types.LogFormat `short:"f" long:"format" env:"FORMAT" default:"text" choice:"text" choice:"json" choice:"pretty" description:"Log format"`
+}
+
 // AppConfig holds the runtime application appconfig
 type AppConfig struct {
 	Config  func(s string) error `short:"c" long:"config" env:"CONFIG" description:"Path to appconfig file" json:"-"`
 	EnvFile func(s string) error `short:"e" long:"env-file" description:"Path to env file" json:"-"`
 
-	LogLevel  types.LogLevel  `long:"log-level" env:"LOG_LEVEL" default:"warn" choice:"debug" choice:"info" choice:"warn" choice:"error" description:"Log level"`
-	LogFormat types.LogFormat `long:"log-format"  env:"LOG_FORMAT" default:"text" choice:"text" choice:"json" choice:"pretty" description:"Log format"`
+	LogConfig LogConfig `group:"Log Options" namespace:"log" env-namespace:"log"`
 
 	AuthHost string `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 
