@@ -1,0 +1,7 @@
+PROVIDERS_GOOGLE_CLIENT_ID=env_client_id
+PROVIDERS_GOOGLE_CLIENT_SECRET=secret
+COOKIE_NAME=env_cookie_name
+COOKIE_DOMAINS=test1.com,example.org
+WHITELIST_DOMAINS=test2.com,example.org
+WHITELIST_USERS=test3.com,example.org
+SECRET=veryverysecret

@@ -229,6 +229,26 @@ func TestConfigParseEnvironment(t *testing.T) {
 	os.Unsetenv("WHITELIST_USERS")
 }
 
+func TestConfigParseEnvFile(t *testing.T) {
+	assert := assert.New(t)
+
+	envFile, _ := filepath.Abs("../testfiles/env.sh")
+	config, err := NewConfig([]string{
+		"-e", envFile,
+	})
+	assert.Nil(err)
+
+	assert.Equal("env_cookie_name", config.Cookie.Name, "variable should be read from environment")
+	assert.Equal("env_client_id", config.Providers.Google.ClientID, "namespace variable should be read from environment")
+	assert.Equal(types.CookieDomains{
+		types.NewCookieDomain("test1.com"),
+		types.NewCookieDomain("example.org"),
+	}, config.Cookie.Domains, "array variable should be read from environment COOKIE_DOMAIN")
+	assert.Equal([]string{"test2.com", "example.org"}, config.Whitelist.Domains, "array variable should be read from environment DOMAIN")
+	assert.Equal([]string{"test3.com", "example.org"}, config.Whitelist.Users, "array variable should be read from environment WHITELIST")
+
+}
+
 func TestConfigTrustedNetworks(t *testing.T) {
 	assert := assert.New(t)
 
