@@ -30,25 +30,25 @@ type AppConfig struct {
 	LogLevel  types.LogLevel  `long:"log-level" env:"LOG_LEVEL" default:"warn" choice:"debug" choice:"info" choice:"warn" choice:"error" description:"Log level"`
 	LogFormat types.LogFormat `long:"log-format"  env:"LOG_FORMAT" default:"text" choice:"text" choice:"json" choice:"pretty" description:"Log format"`
 
-	AuthHost types.Url `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
+	AuthHost string `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 
 	CookieDomains  types.CookieDomains `long:"cookie-domains" env:"COOKIE_DOMAIN" env-delim:"," description:"Comma separated list of Domains to set auth cookie on"`
 	InsecureCookie bool                `long:"insecure-cookie" env:"INSECURE_COOKIE" description:"Use insecure cookies"`
 	CookieName     string              `long:"cookie-name" env:"COOKIE_NAME" default:"_forward_auth" description:"Cookie Name"`
 	CSRFCookieName string              `long:"csrf-cookie-name" env:"CSRF_COOKIE_NAME" default:"_forward_auth_csrf" description:"CSRF Cookie Name"`
 
-	HeaderNames types.CommaSeparatedList `long:"header-names" env:"HEADER_NAMES" default:"X-Forwarded-User" description:"User header names, comma separated"`
-	Path        string                   `long:"url-path" env:"URL_PATH" default:"/_oauth" description:"Callback URL Path"`
-	Secret      string                   `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
-	UserPath    string                   `long:"user-id-path" env:"USER_ID_PATH" default:"email" description:"Dot notation path of a UserID for use with whitelist and X-Forwarded-User"`
+	HeaderNames []string `long:"header-names" env:"HEADER_NAMES" default:"X-Forwarded-User" description:"User header names, can be set multiple times"`
+	Path        string   `long:"url-path" env:"URL_PATH" default:"/_oauth" description:"Callback URL Path"`
+	Secret      string   `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
+	UserPath    string   `long:"user-id-path" env:"USER_ID_PATH" default:"email" description:"Dot notation path of a UserID for use with whitelist and X-Forwarded-User"`
 
 	Port int `long:"port" env:"PORT" default:"4181" description:"Port to listen on"`
 
 	Providers        provider.Providers `group:"providers" namespace:"providers" env-namespace:"PROVIDERS"`
 	SelectedProvider provider.Provider
 
-	Domains   types.CommaSeparatedList `long:"domain" env:"DOMAIN" env-delim:"," description:"Only allow given email domains, comma separated, can be set multiple times"`
-	Whitelist types.CommaSeparatedList `long:"whitelist" env:"WHITELIST" env-delim:"," description:"Only allow given UserID, comma separated, can be set multiple times"`
+	Domains   []string `long:"domain" env:"DOMAIN" env-delim:"," description:"Only allow given email domains, can be set multiple times"`
+	Whitelist []string `long:"whitelist" env:"WHITELIST" env-delim:"," description:"Only allow given UserID, can be set multiple times"`
 	// defaults to false
 	MatchWhitelistOrDomain bool `long:"match-whitelist-or-domain" env:"MATCH_WHITELIST_OR_DOMAIN" description:"If true, allow users that match *either* whitelist or domain. If false and whitelist is set, allow only users from whitelist"`
 
@@ -112,6 +112,8 @@ func (config *AppConfig) Validate() error {
 			return ErrHeaderNamesEmpty
 		}
 	}
+	// TODO valdidate auth host can be parsed into url
+	//url, err := url.Parse(value)
 
 	// auto detect a configured provider
 	gotProvider := false
