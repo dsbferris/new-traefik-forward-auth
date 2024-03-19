@@ -181,8 +181,8 @@ func TestConfigSetMultipleTimes(t *testing.T) {
 
 func TestConfigParseIni(t *testing.T) {
 	assert := assert.New(t)
-	configFile1, _ := filepath.Abs("../testfiles/config0")
-	configFile2, _ := filepath.Abs("../testfiles/config1")
+	configFile1, _ := filepath.Abs("../testfiles/config0.ini")
+	configFile2, _ := filepath.Abs("../testfiles/config1.ini")
 	config, err := NewConfig([]string{
 		"--secret=veryverysecret",
 		"--providers.google.client-id=id",
