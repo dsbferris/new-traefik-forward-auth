@@ -23,8 +23,9 @@ var (
 )
 
 type LogConfig struct {
-	Level  types.LogLevel  `short:"l" long:"level" env:"LEVEL" default:"warn" choice:"debug" choice:"info" choice:"warn" choice:"error" description:"Log level"`
-	Format types.LogFormat `short:"f" long:"format" env:"FORMAT" default:"text" choice:"text" choice:"json" choice:"pretty" description:"Log format"`
+	Verbose bool            `short:"v" long:"verbose" env:"VERBOSE" description:"Short hand for log level debug. Will override any setting for level"`
+	Level   types.LogLevel  `short:"l" long:"level" env:"LEVEL" default:"warn" choice:"debug" choice:"info" choice:"warn" choice:"error" description:"Log level"`
+	Format  types.LogFormat `short:"f" long:"format" env:"FORMAT" default:"text" choice:"text" choice:"json" choice:"pretty" description:"Log format"`
 }
 
 type WhitelistConfig struct {
@@ -105,6 +106,10 @@ func (config *AppConfig) parseFlags(args []string) error {
 }
 
 func (config *AppConfig) Validate() error {
+
+	if config.Log.Verbose {
+		config.Log.Level = types.LEVEL_DEBUG
+	}
 
 	// Check for show stopper errors
 	if !strings.HasPrefix(config.UrlPath, "/") {

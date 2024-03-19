@@ -134,12 +134,18 @@ func TestConfigParseArgs(t *testing.T) {
 		"--cookie.name=cookiename",
 		"--cookie.csrf-name", "csrfcookiename",
 		"--cookie.lifetime=200s",
+		"-v",
+		"-l", "error",
 	})
 	assert.Nil(err)
+	assert.Equal(types.LEVEL_ERROR, config.Log.Level)
+	assert.Equal(true, config.Log.Verbose)
+
 	err = config.Validate()
 	assert.Nil(err)
 
 	// Check normal flags
+	assert.Equal(types.LEVEL_DEBUG, config.Log.Level, "should replace log level when verbose is set")
 	assert.Equal("cookiename", config.Cookie.Name)
 	assert.Equal("csrfcookiename", config.Cookie.CSRFName)
 	assert.Equal(&config.Providers.OIDC, config.SelectedProvider)
