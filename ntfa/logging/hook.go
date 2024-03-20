@@ -53,6 +53,7 @@ func (h Hook) Reset() {
 }
 
 // Entry is a convenience struct containing basic information
+// TODO replace the fields with methods to save ram
 type Entry struct {
 	Time    time.Time  `json:"time"`
 	Level   slog.Level `json:"level"`
