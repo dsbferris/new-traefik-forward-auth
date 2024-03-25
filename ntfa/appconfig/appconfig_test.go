@@ -33,8 +33,9 @@ func TestNewConfig(t *testing.T) {
 		assert := assert.New(t)
 		config, err := NewConfig([]string{
 			"--secret=veryverysecret",
-			"--providers.google.client-id=id",
-			"--providers.google.client-secret=secret",
+			"--providers.oidc.client-id=id",
+			"--providers.oidc.client-secret=secret",
+			"--providers.oidc.issuer-url=https://accounts.google.com",
 
 			"--url-path=_oauthpath",
 		})
@@ -49,6 +50,10 @@ func TestNewConfig(t *testing.T) {
 		assert := assert.New(t)
 		config, err := NewConfig([]string{
 			"--secret=veryverysecret",
+			"--providers.oidc.client-id=id",
+			"--providers.oidc.client-secret=secret",
+			"--providers.oidc.issuer-url=https://accounts.google.com",
+
 			"--header-names= ",
 		})
 		assert.Nil(err)
@@ -74,8 +79,13 @@ func TestNewConfig(t *testing.T) {
 		assert := assert.New(t)
 		config, err := NewConfig([]string{
 			"--secret=veryverysecret",
-			"--providers.google.client-id=id",
-			"--providers.google.client-secret=secret",
+
+			"--providers.oauth.client-id=id",
+			"--providers.oauth.client-secret=secret",
+			"--providers.oauth.auth-url=https://github.com/login/oauth/authorize",
+			"--providers.oauth.token-url=https://github.com/login/oauth/access_token",
+			"--providers.oauth.user-url=https://api.github.com/user",
+
 			"--providers.oidc.client-id=id",
 			"--providers.oidc.client-secret=secret",
 			"--providers.oidc.issuer-url=https://accounts.google.com",
@@ -86,15 +96,15 @@ func TestNewConfig(t *testing.T) {
 			assert.Equal(ErrMultipleProvider, err)
 		}
 	})
-
 }
 
 func TestConfigDefaults(t *testing.T) {
 	assert := assert.New(t)
 	config, err := NewConfig([]string{
 		"--secret=veryverysecret",
-		"--providers.google.client-id=id",
-		"--providers.google.client-secret=secret",
+		"--providers.oidc.client-id=id",
+		"--providers.oidc.client-secret=secret",
+		"--providers.oidc.issuer-url=https://accounts.google.com",
 	})
 	assert.Nil(err)
 	err = config.Validate()
@@ -108,7 +118,7 @@ func TestConfigDefaults(t *testing.T) {
 	assert.False(config.Cookie.Insecure)
 	assert.Equal("_forward_auth", config.Cookie.Name)
 	assert.Equal("_forward_auth_csrf", config.Cookie.CSRFName)
-	assert.Equal(&config.Providers.Google, config.SelectedProvider)
+	assert.Equal(&config.Providers.OIDC, config.SelectedProvider)
 	assert.Len(config.Whitelist.Domains, 0)
 	assert.Equal([]string{"X-Forwarded-User"}, config.HeaderNames)
 	assert.Equal(time.Second*time.Duration(43200), config.Cookie.Lifetime)
@@ -116,9 +126,6 @@ func TestConfigDefaults(t *testing.T) {
 	assert.Equal("/_oauth", config.UrlPath)
 	assert.Len(config.Whitelist.Users, 0)
 	assert.Equal(config.Port, 4181)
-
-	assert.Equal("select_account", config.Providers.Google.Prompt)
-
 	assert.Len(config.Whitelist.Networks, 0)
 }
 
@@ -167,8 +174,9 @@ func TestConfigSetMultipleTimes(t *testing.T) {
 	assert := assert.New(t)
 	config, err := NewConfig([]string{
 		"--secret=veryverysecret",
-		"--providers.google.client-id=id",
-		"--providers.google.client-secret=secret",
+		"--providers.oidc.client-id=id",
+		"--providers.oidc.client-secret=secret",
+		"--providers.oidc.issuer-url=https://accounts.google.com",
 
 		"--whitelist.domains=test@test.com",
 		"--whitelist.domains=test2@test2.com",
@@ -254,13 +262,15 @@ func TestConfigTrustedNetworks(t *testing.T) {
 
 	config, err := NewConfig([]string{
 		"--secret=veryverysecret",
-		"--providers.google.client-id=id",
-		"--providers.google.client-secret=secret",
+		"--providers.oidc.client-id=id",
+		"--providers.oidc.client-secret=secret",
+		"--providers.oidc.issuer-url=https://accounts.google.com",
 
 		"--whitelist.networks=1.2.3.4,30.1.0.0/16",
 	})
-
-	assert.NoError(err)
+	assert.Nil(err)
+	err = config.Validate()
+	assert.Nil(err)
 
 	table := map[string]bool{
 		"1.2.3.3":      false,
@@ -285,14 +295,16 @@ func TestConfigTrustedNetworks2(t *testing.T) {
 
 	config, err := NewConfig([]string{
 		"--secret=veryverysecret",
-		"--providers.google.client-id=id",
-		"--providers.google.client-secret=secret",
+		"--providers.oidc.client-id=id",
+		"--providers.oidc.client-secret=secret",
+		"--providers.oidc.issuer-url=https://accounts.google.com",
 
 		"--whitelist.networks=1.2.3.4",
 		"--whitelist.networks=30.1.0.0/16",
 	})
-
-	assert.NoError(err)
+	assert.Nil(err)
+	err = config.Validate()
+	assert.Nil(err)
 
 	table := map[string]bool{
 		"1.2.3.3":      false,
