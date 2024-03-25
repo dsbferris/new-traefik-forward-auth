@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -376,16 +377,40 @@ func (s *OAuthServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.URL.Path == "/token" {
-		fmt.Fprintf(w, `{"access_token":"123456789"}`)
-	} else if r.URL.Path == "/userinfo" {
-		fmt.Fprint(w, `{
-			"id":"1",
-			"email":"example@example.com",
-			"verified_email":true,
-			"hd":"example.com"
-		}`)
-	} else {
+	switch r.URL.Path {
+	case "/token":
+		// either url encoded...
+		//w.Write([]byte("access_token=123456789"))
+
+		// or json encoded...
+		w.Header().Add("Content-Type", "application/json")
+		_, err := w.Write([]byte(`{"access_token":"123456789"}`))
+		if err != nil {
+			panic(err)
+		}
+	case "/userinfo":
+		w.Header().Add("Content-Type", "application/json")
+		type Userinfo struct {
+			ID            string `json:"id"`
+			Email         string `json:"email"`
+			VerifiedEmail bool   `json:"verified_email"`
+			HD            string `json:"hd"`
+		}
+		userinfo := Userinfo{
+			ID:            "1",
+			Email:         "example@example.com",
+			VerifiedEmail: true,
+			HD:            "example.com",
+		}
+		jsonBytes, err := json.Marshal(userinfo)
+		if err != nil {
+			panic(err)
+		}
+		_, err = w.Write(jsonBytes)
+		if err != nil {
+			panic(err)
+		}
+	default:
 		s.t.Fatal("Unrecognised request: ", r.Method, r.URL)
 	}
 }
