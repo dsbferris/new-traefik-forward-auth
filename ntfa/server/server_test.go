@@ -26,7 +26,7 @@ import (
 
 func TestServerRootHandler(t *testing.T) {
 	assert := assert.New(t)
-	config := newDefaultConfig()
+	config := newOauthConfig()
 	logger, _ := logging.NewLogger(types.FORMAT_JSON, types.LEVEL_DEBUG)
 
 	// X-Forwarded headers should be read into request
@@ -58,7 +58,7 @@ func TestServerRootHandler(t *testing.T) {
 
 func TestServerAuthHandlerInvalid(t *testing.T) {
 	assert := assert.New(t)
-	config := newDefaultConfig()
+	config := newOauthConfig()
 	a := auth.NewAuth(config)
 	hook, logger := logging.NewHookLogger(slog.LevelWarn)
 
@@ -70,7 +70,7 @@ func TestServerAuthHandlerInvalid(t *testing.T) {
 	fwd, _ := res.Location()
 	assert.Equal("https", fwd.Scheme, "vanilla request should be redirected to google")
 	assert.Equal("accounts.google.com", fwd.Host, "vanilla request should be redirected to google")
-	assert.Equal("/o/oauth2/auth", fwd.Path, "vanilla request should be redirected to google")
+	assert.Equal("/o/oauth2/v2/auth", fwd.Path, "vanilla request should be redirected to google")
 
 	// Check state string
 	qs := fwd.Query()
@@ -79,7 +79,7 @@ func TestServerAuthHandlerInvalid(t *testing.T) {
 	require.Len(t, state, 1)
 	parts := strings.SplitN(state[0], ":", 3)
 	require.Len(t, parts, 3)
-	assert.Equal("google", parts[1])
+	assert.Equal("oauth", parts[1])
 	assert.Equal("http://example.com/foo", parts[2])
 
 	// Should warn as using http without insecure cookie
@@ -110,7 +110,7 @@ func TestServerAuthHandlerInvalid(t *testing.T) {
 
 func TestServerAuthHandlerExpired(t *testing.T) {
 	assert := assert.New(t)
-	config := newDefaultConfig()
+	config := newOauthConfig()
 	a := auth.NewAuth(config)
 	config.Cookie.Lifetime = time.Second * time.Duration(-1)
 	config.Whitelist.Domains = []string{"test.com"}
@@ -134,12 +134,12 @@ func TestServerAuthHandlerExpired(t *testing.T) {
 	fwd, _ := res.Location()
 	assert.Equal("https", fwd.Scheme, "request with expired cookie should be redirected to google")
 	assert.Equal("accounts.google.com", fwd.Host, "request with expired cookie should be redirected to google")
-	assert.Equal("/o/oauth2/auth", fwd.Path, "request with expired cookie should be redirected to google")
+	assert.Equal("/o/oauth2/v2/auth", fwd.Path, "request with expired cookie should be redirected to google")
 }
 
 func TestServerAuthHandlerValid(t *testing.T) {
 	assert := assert.New(t)
-	config := newDefaultConfig()
+	config := newOauthConfig()
 	a := auth.NewAuth(config)
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
@@ -157,7 +157,7 @@ func TestServerAuthHandlerValid(t *testing.T) {
 
 func TestServerAuthHandlerTrustedIP_trusted(t *testing.T) {
 	assert := assert.New(t)
-	config := newDefaultConfig()
+	config := newOauthConfig()
 
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
@@ -169,7 +169,7 @@ func TestServerAuthHandlerTrustedIP_trusted(t *testing.T) {
 
 func TestServerAuthHandlerTrustedIP_notTrusted(t *testing.T) {
 	assert := assert.New(t)
-	config := newDefaultConfig()
+	config := newOauthConfig()
 
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
@@ -181,7 +181,7 @@ func TestServerAuthHandlerTrustedIP_notTrusted(t *testing.T) {
 
 func TestServerAuthHandlerTrustedIP_invalidAddress(t *testing.T) {
 	assert := assert.New(t)
-	config := newDefaultConfig()
+	config := newOauthConfig()
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
 	req.Header.Set("X-Forwarded-For", "127.0")
@@ -193,18 +193,19 @@ func TestServerAuthHandlerTrustedIP_invalidAddress(t *testing.T) {
 func TestServerAuthCallback(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
-	config := newDefaultConfig()
-	a := auth.NewAuth(config)
 
 	// Setup OAuth server
 	server, serverURL := NewOAuthServer(t)
+	defer server.Close()
 
 	tokenUrl := fmt.Sprintf("%s://%s/token", serverURL.Scheme, serverURL.Host)
 	userUrl := fmt.Sprintf("%s://%s/userinfo", serverURL.Scheme, serverURL.Host)
-
-	defer server.Close()
-	config.Providers.Google.TokenURL = tokenUrl
-	config.Providers.Google.UserURL = userUrl
+	config := newOauthConfig(
+		"--providers.oauth.token-url="+tokenUrl,
+		"--providers.oauth.user-url="+userUrl,
+		"--providers.oauth.token-style=query",
+	)
+	a := auth.NewAuth(config)
 
 	// Should pass auth response request to callback
 	req := newHTTPRequest("GET", "http://example.com/_oauth")
@@ -225,7 +226,7 @@ func TestServerAuthCallback(t *testing.T) {
 	assert.Equal(401, res.StatusCode, "auth callback with invalid provider shouldn't be authorised")
 
 	// Should redirect valid request
-	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":google:http://example.com")
+	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":oauth:http://example.com")
 	c = a.MakeCSRFCookie(req, nonce)
 	res, _ = doHttpRequest(req, c, config)
 	require.Equal(307, res.StatusCode, "valid auth callback should be allowed")
@@ -238,8 +239,6 @@ func TestServerAuthCallback(t *testing.T) {
 
 func TestServerAuthCallbackExchangeFailure(t *testing.T) {
 	assert := assert.New(t)
-	config := newDefaultConfig()
-	a := auth.NewAuth(config)
 
 	// Setup OAuth server
 	server, serverURL := NewFailingOAuthServer(t)
@@ -247,11 +246,15 @@ func TestServerAuthCallbackExchangeFailure(t *testing.T) {
 
 	tokenUrl := fmt.Sprintf("%s://%s/token", serverURL.Scheme, serverURL.Host)
 	userUrl := fmt.Sprintf("%s://%s/userinfo", serverURL.Scheme, serverURL.Host)
-	config.Providers.Google.TokenURL = tokenUrl
-	config.Providers.Google.UserURL = userUrl
+	config := newOauthConfig(
+		"--providers.oauth.token-url="+tokenUrl,
+		"--providers.oauth.user-url="+userUrl,
+		"--providers.oauth.token-style=query",
+	)
+	a := auth.NewAuth(config)
 
 	// Should handle failed code exchange
-	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:google:http://example.com")
+	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:oauth:http://example.com")
 	c := a.MakeCSRFCookie(req, "12345678901234567890123456789012")
 	res, _ := doHttpRequest(req, c, config)
 	assert.Equal(503, res.StatusCode, "auth callback should handle failed code exchange")
@@ -259,22 +262,22 @@ func TestServerAuthCallbackExchangeFailure(t *testing.T) {
 
 func TestServerAuthCallbackUserFailure(t *testing.T) {
 	assert := assert.New(t)
-	config := newDefaultConfig()
+	config := newOauthConfig()
 	a := auth.NewAuth(config)
 
 	// Setup OAuth server
 	server, serverURL := NewOAuthServer(t)
 	defer server.Close()
 	tokenUrl := fmt.Sprintf("%s://%s/token", serverURL.Scheme, serverURL.Host)
-	config.Providers.Google.TokenURL = tokenUrl
+	config.Providers.OAuth.TokenURL = tokenUrl
 
 	serverFail, serverFailURL := NewFailingOAuthServer(t)
 	defer serverFail.Close()
 	userUrl := fmt.Sprintf("%s://%s/userinfo", serverFailURL.Scheme, serverFailURL.Host)
-	config.Providers.Google.UserURL = userUrl
+	config.Providers.OAuth.UserURL = userUrl
 
 	// Should handle failed user request
-	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:google:http://example.com")
+	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:oauth:http://example.com")
 	c := a.MakeCSRFCookie(req, "12345678901234567890123456789012")
 	res, _ := doHttpRequest(req, c, config)
 	assert.Equal(503, res.StatusCode, "auth callback should handle failed user request")
@@ -283,7 +286,7 @@ func TestServerAuthCallbackUserFailure(t *testing.T) {
 func TestServerLogout(t *testing.T) {
 	require := require.New(t)
 	assert := assert.New(t)
-	config := newDefaultConfig()
+	config := newOauthConfig()
 
 	req := newDefaultHttpRequest("/_oauth/logout")
 	res, _ := doHttpRequest(req, nil, config)
@@ -324,7 +327,7 @@ func TestServerLogout(t *testing.T) {
 
 func TestServerDefaultAction(t *testing.T) {
 	assert := assert.New(t)
-	config := newDefaultConfig()
+	config := newOauthConfig()
 
 	req := newDefaultHttpRequest("/random")
 	res, _ := doHttpRequest(req, nil, config)
@@ -333,7 +336,7 @@ func TestServerDefaultAction(t *testing.T) {
 
 func TestServerDefaultProvider(t *testing.T) {
 	assert := assert.New(t)
-	config := newDefaultConfig()
+	config := newOauthConfig()
 
 	// Should use "google" as default provider when not specified
 	req := newDefaultHttpRequest("/random")
@@ -341,7 +344,7 @@ func TestServerDefaultProvider(t *testing.T) {
 	fwd, _ := res.Location()
 	assert.Equal("https", fwd.Scheme, "request with expired cookie should be redirected to google")
 	assert.Equal("accounts.google.com", fwd.Host, "request with expired cookie should be redirected to google")
-	assert.Equal("/o/oauth2/auth", fwd.Path, "request with expired cookie should be redirected to google")
+	assert.Equal("/o/oauth2/v2/auth", fwd.Path, "request with expired cookie should be redirected to google")
 
 	// Should use alternative default provider when set
 	config.SelectedProvider = &config.Providers.OIDC
@@ -431,14 +434,45 @@ func doHttpRequest(r *http.Request, c *http.Cookie, config *appconfig.AppConfig)
 	return doHttpRequestWithLogger(r, c, config, logger)
 }
 
-func newDefaultConfig() *appconfig.AppConfig {
-	config, _ := appconfig.NewConfig([]string{
+func newOidcConfig() *appconfig.AppConfig {
+	config, err := appconfig.NewConfig([]string{
 		"--secret=veryverysecret",
-		"--providers.google.client-id=id",
-		"--providers.google.client-secret=secret",
+		"--providers.oidc.client-id=id",
+		"--providers.oidc.client-secret=secret",
+		"--providers.oidc.issuer-url=https://accounts.google.com",
 		"--whitelist.networks=127.0.0.2",
 	})
-	_ = config.Validate()
+	if err != nil {
+		panic(err)
+	}
+	err = config.Validate()
+	if err != nil {
+		panic(err)
+	}
+	return config
+}
+
+func newOauthConfig(configArgs ...string) *appconfig.AppConfig {
+	args := []string{
+		"--secret=veryverysecret",
+		"--providers.oauth.client-id=id",
+		"--providers.oauth.client-secret=secret",
+		"--providers.oauth.auth-url=https://accounts.google.com/o/oauth2/v2/auth",
+		"--providers.oauth.token-url=https://oauth2.googleapis.com/token",
+		"--providers.oauth.user-url=https://openidconnect.googleapis.com/v1/userinfo",
+		"--providers.oauth.scope=https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+		"--providers.oauth.prompt=select_account",
+		"--whitelist.networks=127.0.0.2",
+	}
+	args = append(args, configArgs...)
+	config, err := appconfig.NewConfig(args)
+	if err != nil {
+		panic(err)
+	}
+	err = config.Validate()
+	if err != nil {
+		panic(err)
+	}
 	return config
 }
 
