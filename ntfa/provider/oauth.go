@@ -45,11 +45,21 @@ func (o *OAuth) Setup() error {
 	// TODO valdidate  can be parsed into url
 	//url, err := url.Parse(value)
 
+	// TODO add token style auto
+	var authStyle oauth2.AuthStyle = oauth2.AuthStyleAutoDetect
+	if o.TokenStyle == types.HEADER {
+		authStyle = oauth2.AuthStyleInHeader
+	} else if o.TokenStyle == types.QUERY {
+		authStyle = oauth2.AuthStyleInParams
+	}
 	// Create oauth2 config
 	o.Config = &oauth2.Config{
 		ClientID:     o.ClientID,
 		ClientSecret: o.ClientSecret,
 		Endpoint: oauth2.Endpoint{
+			AuthURL:   o.AuthURL,
+			TokenURL:  o.TokenURL,
+			AuthStyle: authStyle,
 		},
 		Scopes: o.Scopes,
 	}
