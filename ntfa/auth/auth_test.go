@@ -25,9 +25,14 @@ var authHost = "auth.example.com"
 func newPseudoConfig() *appconfig.AppConfig {
 	c, err := appconfig.NewConfig([]string{
 		"--secret=veryverysecret",
-		"--providers.google.client-id=id",
-		"--providers.google.client-secret=secret",
+		"--providers.oidc.client-id=id",
+		"--providers.oidc.client-secret=secret",
+		"--providers.oidc.issuer-url=https://accounts.google.com",
 	})
+	if err != nil {
+		panic(err)
+	}
+	err = c.Validate()
 	if err != nil {
 		panic(err)
 	}
