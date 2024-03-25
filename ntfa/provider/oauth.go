@@ -11,10 +11,10 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var ErrInvalidSetup error = errors.New("providers.generic-oauth.auth-url, providers.generic-oauth.token-url, providers.generic-oauth.user-url, providers.generic-oauth.client-id, providers.generic-oauth.client-secret, providers.generic-oauth.token-style must be set")
+var ErrInvalidSetup error = errors.New("providers.oauth.auth-url, providers.oauth.token-url, providers.oauth.user-url, providers.oauth.client-id, providers.oauth.client-secret, providers.oauth.token-style must be set")
 
-// GenericOAuth provider
-type GenericOAuth struct {
+// OAuth provider
+type OAuth struct {
 	AuthURL      string           `long:"auth-url" env:"AUTH_URL" description:"Auth/Login URL"`
 	TokenURL     string           `long:"token-url" env:"TOKEN_URL" description:"Token URL"`
 	UserURL      string           `long:"user-url" env:"USER_URL" description:"URL used to retrieve user info"`
@@ -22,16 +22,16 @@ type GenericOAuth struct {
 	ClientSecret string           `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
 	TokenStyle   types.TokenStyle `long:"token-style" env:"TOKEN_STYLE" default:"header" choice:"header" choice:"query" description:"How token is presented when querying the User URL"`
 
-	OAuthProvider
+	OAuthProviderConfig
 }
 
 // Name returns the name of the provider
-func (o GenericOAuth) Name() string {
-	return "generic-oauth"
+func (o OAuth) Name() string {
+	return "oauth"
 }
 
 // Setup performs validation and setup
-func (o *GenericOAuth) Setup() error {
+func (o *OAuth) Setup() error {
 	// Check parmas
 	if o.AuthURL == "" ||
 		o.TokenURL == "" ||
@@ -50,8 +50,6 @@ func (o *GenericOAuth) Setup() error {
 		ClientID:     o.ClientID,
 		ClientSecret: o.ClientSecret,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  o.AuthURL,
-			TokenURL: o.TokenURL,
 		},
 		Scopes: o.Scopes,
 	}
@@ -62,12 +60,12 @@ func (o *GenericOAuth) Setup() error {
 }
 
 // GetLoginURL provides the login url for the given redirect uri and state
-func (o GenericOAuth) GetLoginURL(redirectURI, state string, forcePrompt bool) string {
+func (o OAuth) GetLoginURL(redirectURI, state string, forcePrompt bool) string {
 	return o.OAuthGetLoginURL(redirectURI, state, forcePrompt)
 }
 
 // ExchangeCode exchanges the given redirect uri and code for a token
-func (o GenericOAuth) ExchangeCode(redirectURI, code string) (string, error) {
+func (o OAuth) ExchangeCode(redirectURI, code string) (string, error) {
 	token, err := o.OAuthExchangeCode(redirectURI, code)
 	if err != nil {
 		return "", err
@@ -77,7 +75,7 @@ func (o GenericOAuth) ExchangeCode(redirectURI, code string) (string, error) {
 }
 
 // GetUser uses the given token and returns a UserID
-func (o GenericOAuth) GetUser(token, UserPath string) (string, error) {
+func (o OAuth) GetUser(token, UserPath string) (string, error) {
 	req, err := http.NewRequest("GET", o.UserURL, nil)
 	if err != nil {
 		return "", err

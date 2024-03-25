@@ -602,9 +602,9 @@ func TestMakeState(t *testing.T) {
 	assert.Equal("nonce:oidc:http://example.com/hello", state)
 
 	// Test with Generic OAuth
-	p3 := provider.GenericOAuth{}
+	p3 := provider.OAuth{}
 	state = a.MakeState(redirect, &p3, "nonce")
-	assert.Equal("nonce:generic-oauth:http://example.com/hello", state)
+	assert.Equal("nonce:oauth:http://example.com/hello", state)
 }
 
 func TestAuthNonce(t *testing.T) {

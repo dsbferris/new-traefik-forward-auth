@@ -348,7 +348,7 @@ func TestServerDefaultProvider(t *testing.T) {
 
 	// Should use alternative default provider when set
 	config.SelectedProvider = &config.Providers.OIDC
-	config.Providers.OIDC.OAuthProvider.Config = &oauth2.Config{
+	config.Providers.OIDC.OAuthProviderConfig.Config = &oauth2.Config{
 		Endpoint: oauth2.Endpoint{
 			AuthURL: "https://oidc.com/oidcauth",
 		},

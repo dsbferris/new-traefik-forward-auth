@@ -15,7 +15,7 @@ type OIDC struct {
 	ClientID     string `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
 	ClientSecret string `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
 
-	OAuthProvider
+	OAuthProviderConfig
 
 	provider *oidc.Provider
 	verifier *oidc.IDTokenVerifier

@@ -18,13 +18,13 @@ var (
 )
 
 func TestGenericOAuthName(t *testing.T) {
-	p := GenericOAuth{}
-	assert.Equal(t, "generic-oauth", p.Name())
+	p := OAuth{}
+	assert.Equal(t, "oauth", p.Name())
 }
 
 func TestGenericOAuthSetup(t *testing.T) {
 	assert := assert.New(t)
-	p := GenericOAuth{}
+	p := OAuth{}
 
 	// Check validation
 	err := p.Setup()
@@ -32,7 +32,7 @@ func TestGenericOAuthSetup(t *testing.T) {
 		assert.Equal(ErrInvalidSetup, err)
 	}
 	// Check setup
-	p = GenericOAuth{
+	p = OAuth{
 		AuthURL:      defaultAuthUrl,
 		TokenURL:     defaultTokenUrl,
 		UserURL:      defaultUserUrl,
@@ -46,14 +46,14 @@ func TestGenericOAuthSetup(t *testing.T) {
 
 func TestGenericOAuthGetLoginURL(t *testing.T) {
 	assert := assert.New(t)
-	p := GenericOAuth{
+	p := OAuth{
 		AuthURL:      defaultAuthUrl,
 		TokenURL:     defaultTokenUrl,
 		UserURL:      defaultUserUrl,
 		ClientID:     "idtest",
 		ClientSecret: "secret",
 		TokenStyle:   types.HEADER,
-		OAuthProvider: OAuthProvider{
+		OAuthProviderConfig: OAuthProviderConfig{
 			Scopes: []string{"scopetest"},
 		},
 	}
@@ -99,7 +99,7 @@ func TestGenericOAuthExchangeCode(t *testing.T) {
 
 	tokenUrl := serverURL.String() + "/token"
 	// Setup provider
-	p := GenericOAuth{
+	p := OAuth{
 		AuthURL:      defaultAuthUrl,
 		TokenURL:     tokenUrl,
 		UserURL:      defaultUserUrl,
@@ -130,7 +130,7 @@ func TestGenericOAuthGetUser(t *testing.T) {
 
 	userUrl := serverURL.String() + "/userinfo"
 	// Setup provider
-	p := GenericOAuth{
+	p := OAuth{
 		AuthURL:      defaultAuthUrl,
 		TokenURL:     defaultTokenUrl,
 		UserURL:      userUrl,
