@@ -10,13 +10,12 @@ import (
 
 // Providers contains all the implemented providers
 type Providers struct {
-	Google       Google       `group:"Google Provider" namespace:"google" env-namespace:"GOOGLE"`
-	OIDC         OIDC         `group:"OIDC Provider" namespace:"oidc" env-namespace:"OIDC"`
-	GenericOAuth GenericOAuth `group:"Generic OAuth2 Provider" namespace:"generic-oauth" env-namespace:"GENERIC_OAUTH"`
+	OIDC  OIDC  `group:"OIDC Provider" namespace:"oidc" env-namespace:"OIDC"`
+	OAuth OAuth `group:"Generic OAuth2 Provider" namespace:"oauth" env-namespace:"OAUTH"`
 }
 
 func (p *Providers) GetAll() []Provider {
-	return []Provider{&p.Google, &p.OIDC, &p.GenericOAuth}
+	return []Provider{&p.OIDC, &p.OAuth}
 }
 
 // Provider is used to authenticate users
@@ -26,10 +25,6 @@ type Provider interface {
 	ExchangeCode(redirectURI, code string) (string, error)
 	GetUser(token, UserPath string) (string, error)
 	Setup() error
-}
-
-type token struct {
-	Token string `json:"access_token"`
 }
 
 // User is the authenticated user

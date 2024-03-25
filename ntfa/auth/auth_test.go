@@ -596,14 +596,9 @@ func TestMakeState(t *testing.T) {
 	a := NewAuth(config)
 	redirect := "http://example.com/hello"
 
-	// Test with google
-	p := provider.Google{}
-	state := a.MakeState(redirect, &p, "nonce")
-	assert.Equal("nonce:google:http://example.com/hello", state)
-
 	// Test with OIDC
 	p2 := provider.OIDC{}
-	state = a.MakeState(redirect, &p2, "nonce")
+	state := a.MakeState(redirect, &p2, "nonce")
 	assert.Equal("nonce:oidc:http://example.com/hello", state)
 
 	// Test with Generic OAuth

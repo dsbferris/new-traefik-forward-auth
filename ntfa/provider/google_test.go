@@ -1,124 +1,126 @@
 package provider
 
-import (
-	"fmt"
-	"net/url"
-	"testing"
+// TODO check if we need parts of this somewhere else
 
-	"github.com/stretchr/testify/assert"
-)
+// import (
+// 	"fmt"
+// 	"net/url"
+// 	"testing"
 
-// Tests
+// 	"github.com/stretchr/testify/assert"
+// )
 
-func TestGoogleName(t *testing.T) {
-	p := Google{}
-	assert.Equal(t, "google", p.Name())
-}
+// // Tests
 
-func TestGoogleSetup(t *testing.T) {
-	assert := assert.New(t)
-	p := Google{}
+// func TestGoogleName(t *testing.T) {
+// 	p := Google{}
+// 	assert.Equal(t, "google", p.Name())
+// }
 
-	// Check validation
-	err := p.Setup()
-	if assert.Error(err) {
-		assert.Equal("providers.google.client-id, providers.google.client-secret must be set", err.Error())
-	}
+// func TestGoogleSetup(t *testing.T) {
+// 	assert := assert.New(t)
+// 	p := Google{}
 
-	// Check setup
-	p = Google{
-		ClientID:     "id",
-		ClientSecret: "secret",
-	}
-	err = p.Setup()
-	assert.Nil(err)
-	assert.Equal("https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email", p.Scope)
-	assert.Equal("", p.Prompt)
+// 	// Check validation
+// 	err := p.Setup()
+// 	if assert.Error(err) {
+// 		assert.Equal("providers.google.client-id, providers.google.client-secret must be set", err.Error())
+// 	}
 
-	assert.Equal("https://accounts.google.com/o/oauth2/auth", p.LoginURL)
-	assert.Equal("https://www.googleapis.com/oauth2/v3/token", p.TokenURL)
-	assert.Equal("https://www.googleapis.com/oauth2/v2/userinfo", p.UserURL)
-}
+// 	// Check setup
+// 	p = Google{
+// 		ClientID:     "id",
+// 		ClientSecret: "secret",
+// 	}
+// 	err = p.Setup()
+// 	assert.Nil(err)
+// 	assert.Equal("https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email", p.Scope)
+// 	assert.Equal("", p.Prompt)
 
-func TestGoogleGetLoginURL(t *testing.T) {
-	assert := assert.New(t)
-	p := Google{
-		ClientID:     "idtest",
-		ClientSecret: "sectest",
-		Scope:        "scopetest",
-		Prompt:       "consent select_account",
-		LoginURL:     "https://google.com/auth",
-	}
+// 	assert.Equal("https://accounts.google.com/o/oauth2/auth", p.LoginURL)
+// 	assert.Equal("https://www.googleapis.com/oauth2/v3/token", p.TokenURL)
+// 	assert.Equal("https://www.googleapis.com/oauth2/v2/userinfo", p.UserURL)
+// }
 
-	// Check url
-	uri, err := url.Parse(p.GetLoginURL("http://example.com/_oauth", "state", false))
-	assert.Nil(err)
-	assert.Equal("https", uri.Scheme)
-	assert.Equal("google.com", uri.Host)
-	assert.Equal("/auth", uri.Path)
+// func TestGoogleGetLoginURL(t *testing.T) {
+// 	assert := assert.New(t)
+// 	p := Google{
+// 		ClientID:     "idtest",
+// 		ClientSecret: "sectest",
+// 		Scope:        "scopetest",
+// 		Prompt:       "consent select_account",
+// 		LoginURL:     "https://google.com/auth",
+// 	}
 
-	// Check query string
-	qs := uri.Query()
-	expectedQs := url.Values{
-		"client_id":     []string{"idtest"},
-		"redirect_uri":  []string{"http://example.com/_oauth"},
-		"response_type": []string{"code"},
-		"scope":         []string{"scopetest"},
-		"prompt":        []string{"consent select_account"},
-		"state":         []string{"state"},
-	}
-	assert.Equal(expectedQs, qs)
-}
+// 	// Check url
+// 	uri, err := url.Parse(p.GetLoginURL("http://example.com/_oauth", "state", false))
+// 	assert.Nil(err)
+// 	assert.Equal("https", uri.Scheme)
+// 	assert.Equal("google.com", uri.Host)
+// 	assert.Equal("/auth", uri.Path)
 
-func TestGoogleExchangeCode(t *testing.T) {
-	assert := assert.New(t)
+// 	// Check query string
+// 	qs := uri.Query()
+// 	expectedQs := url.Values{
+// 		"client_id":     []string{"idtest"},
+// 		"redirect_uri":  []string{"http://example.com/_oauth"},
+// 		"response_type": []string{"code"},
+// 		"scope":         []string{"scopetest"},
+// 		"prompt":        []string{"consent select_account"},
+// 		"state":         []string{"state"},
+// 	}
+// 	assert.Equal(expectedQs, qs)
+// }
 
-	// Setup server
-	expected := url.Values{
-		"client_id":     []string{"idtest"},
-		"client_secret": []string{"sectest"},
-		"code":          []string{"code"},
-		"grant_type":    []string{"authorization_code"},
-		"redirect_uri":  []string{"http://example.com/_oauth"},
-	}
-	server, serverURL := NewOAuthServer(t, map[string]string{
-		"token": expected.Encode(),
-	})
-	defer server.Close()
-	tokenUrl := fmt.Sprintf("%s://%s/token", serverURL.Scheme, serverURL.Host)
-	// Setup provider
-	p := Google{
-		ClientID:     "idtest",
-		ClientSecret: "sectest",
-		Scope:        "scopetest",
-		Prompt:       "consent select_account",
-		TokenURL:     tokenUrl,
-	}
+// func TestGoogleExchangeCode(t *testing.T) {
+// 	assert := assert.New(t)
 
-	token, err := p.ExchangeCode("http://example.com/_oauth", "code")
-	assert.Nil(err)
-	assert.Equal("123456789", token)
-}
+// 	// Setup server
+// 	expected := url.Values{
+// 		"client_id":     []string{"idtest"},
+// 		"client_secret": []string{"sectest"},
+// 		"code":          []string{"code"},
+// 		"grant_type":    []string{"authorization_code"},
+// 		"redirect_uri":  []string{"http://example.com/_oauth"},
+// 	}
+// 	server, serverURL := NewOAuthServer(t, map[string]string{
+// 		"token": expected.Encode(),
+// 	})
+// 	defer server.Close()
+// 	tokenUrl := fmt.Sprintf("%s://%s/token", serverURL.Scheme, serverURL.Host)
+// 	// Setup provider
+// 	p := Google{
+// 		ClientID:     "idtest",
+// 		ClientSecret: "sectest",
+// 		Scope:        "scopetest",
+// 		Prompt:       "consent select_account",
+// 		TokenURL:     tokenUrl,
+// 	}
 
-func TestGoogleGetUser(t *testing.T) {
-	assert := assert.New(t)
+// 	token, err := p.ExchangeCode("http://example.com/_oauth", "code")
+// 	assert.Nil(err)
+// 	assert.Equal("123456789", token)
+// }
 
-	// Setup server
-	server, serverURL := NewOAuthServer(t, nil)
-	defer server.Close()
+// func TestGoogleGetUser(t *testing.T) {
+// 	assert := assert.New(t)
 
-	userUrl := fmt.Sprintf("%s://%s/userinfo", serverURL.Scheme, serverURL.Host)
-	// Setup provider
-	p := Google{
-		ClientID:     "idtest",
-		ClientSecret: "sectest",
-		Scope:        "scopetest",
-		Prompt:       "consent select_account",
-		UserURL:      userUrl,
-	}
+// 	// Setup server
+// 	server, serverURL := NewOAuthServer(t, nil)
+// 	defer server.Close()
 
-	user, err := p.GetUser("123456789", "email")
-	assert.Nil(err)
+// 	userUrl := fmt.Sprintf("%s://%s/userinfo", serverURL.Scheme, serverURL.Host)
+// 	// Setup provider
+// 	p := Google{
+// 		ClientID:     "idtest",
+// 		ClientSecret: "sectest",
+// 		Scope:        "scopetest",
+// 		Prompt:       "consent select_account",
+// 		UserURL:      userUrl,
+// 	}
 
-	assert.Equal("example@example.com", user)
-}
+// 	user, err := p.GetUser("123456789", "email")
+// 	assert.Nil(err)
+
+// 	assert.Equal("example@example.com", user)
+// }
