@@ -189,72 +189,85 @@ func TestConfigSetMultipleTimes(t *testing.T) {
 
 func TestConfigParseIni(t *testing.T) {
 	assert := assert.New(t)
-	configFile1, _ := filepath.Abs("../testfiles/config0.ini")
-	configFile2, _ := filepath.Abs("../testfiles/config1.ini")
+	configFile1, _ := filepath.Abs("../../testfiles/config0.ini")
+	configFile2, _ := filepath.Abs("../../testfiles/config1.ini")
 	config, err := NewConfig([]string{
-		"--secret=veryverysecret",
-		"--providers.google.client-id=id",
-		"--providers.google.client-secret=secret",
-
+		// "--cookie.csrf-name=csrfcookiename", // the order here matters!
 		"--config=" + configFile1,
 		"--config=" + configFile2,
-		"--cookie.csrf-name=csrfcookiename",
+		"--cookie.csrf-name=csrfcookiename", // the order here matters!
 	})
-	require.Nil(t, err)
+	assert.Nil(err)
+	err = config.Validate()
+	assert.Nil(err)
 
 	assert.Equal("inicookiename", config.Cookie.Name, "should be read from ini file")
-	assert.Equal("csrfcookiename", config.Cookie.CSRFName, "should be read from ini file")
+	assert.Equal("csrfcookiename", config.Cookie.CSRFName, "variable from args should take priority over ini file")
 	assert.Equal("/two", config.UrlPath, "variable in second ini file should override first ini file")
 }
 
 func TestConfigParseEnvironment(t *testing.T) {
 	assert := assert.New(t)
-	os.Setenv("PROVIDERS_GOOGLE_CLIENT_ID", "env_client_id")
 	os.Setenv("COOKIE_NAME", "env_cookie_name")
 	os.Setenv("COOKIE_DOMAINS", "test1.com,example.org")
 	os.Setenv("WHITELIST_DOMAINS", "test2.com,example.org")
 	os.Setenv("WHITELIST_USERS", "test3.com,example.org")
+	os.Setenv("SECRET", "veryverysecret")
+	os.Setenv("PROVIDERS_OIDC_ISSUER_URL", "https://accounts.google.com")
+	os.Setenv("PROVIDERS_OIDC_CLIENT_ID", "id")
+	os.Setenv("PROVIDERS_OIDC_CLIENT_SECRET", "secret")
 
 	config, err := NewConfig([]string{
-		"--secret=veryverysecret",
-		"--providers.google.client-secret=secret",
+		"--cookie.name=cookiename",
 	})
 	assert.Nil(err)
 
-	assert.Equal("env_cookie_name", config.Cookie.Name, "variable should be read from environment")
-	assert.Equal("env_client_id", config.Providers.Google.ClientID, "namespace variable should be read from environment")
+	assert.Equal("cookiename", config.Cookie.Name, "variable from args should take priority over env")
 	assert.Equal(types.CookieDomains{
 		types.NewCookieDomain("test1.com"),
 		types.NewCookieDomain("example.org"),
-	}, config.Cookie.Domains, "array variable should be read from environment COOKIE_DOMAIN")
-	assert.Equal([]string{"test2.com", "example.org"}, config.Whitelist.Domains, "array variable should be read from environment DOMAIN")
-	assert.Equal([]string{"test3.com", "example.org"}, config.Whitelist.Users, "array variable should be read from environment WHITELIST")
+	}, config.Cookie.Domains, "array variable should be read from environment COOKIE_DOMAINS")
+	assert.Equal([]string{"test2.com", "example.org"}, config.Whitelist.Domains, "array variable should be read from environment WHITELIST_DOMAINS")
+	assert.Equal([]string{"test3.com", "example.org"}, config.Whitelist.Users, "array variable should be read from environment WHITELIST_USERS")
+	assert.Equal("veryverysecret", config.Secret)
+	assert.Equal("https://accounts.google.com", config.Providers.OIDC.IssuerURL)
+	assert.Equal("id", config.Providers.OIDC.ClientID, "namespace variable should be read from environment")
+	assert.Equal("secret", config.Providers.OIDC.ClientSecret, "namespace variable should be read from environment")
 
-	os.Unsetenv("PROVIDERS_GOOGLE_CLIENT_ID")
 	os.Unsetenv("COOKIE_NAME")
 	os.Unsetenv("COOKIE_DOMAINS")
 	os.Unsetenv("WHITELIST_DOMAINS")
 	os.Unsetenv("WHITELIST_USERS")
+	os.Unsetenv("SECRET")
+	os.Unsetenv("PROVIDERS_OIDC_ISSUER_URL")
+	os.Unsetenv("PROVIDERS_OIDC_CLIENT_ID")
+	os.Unsetenv("PROVIDERS_OIDC_CLIENT_SECRET")
 }
 
 func TestConfigParseEnvFile(t *testing.T) {
 	assert := assert.New(t)
+	os.Setenv("COOKIE_CSRF_NAME", "env_cookie_csrf_name")
 
-	envFile, _ := filepath.Abs("../testfiles/env.sh")
+	envFile, _ := filepath.Abs("../../testfiles/env.sh")
 	config, err := NewConfig([]string{
-		"-e", envFile,
+		"--env-file", envFile,
+		"--cookie.name=cookiename",
 	})
 	assert.Nil(err)
+	err = config.Validate()
+	assert.Nil(err)
 
-	assert.Equal("env_cookie_name", config.Cookie.Name, "variable should be read from environment")
-	assert.Equal("env_client_id", config.Providers.Google.ClientID, "namespace variable should be read from environment")
+	assert.Equal("cookiename", config.Cookie.Name, "variable from args should take priority over env")
+	assert.Equal("env_cookie_csrf_name", config.Cookie.CSRFName, "variable from env should take priority over env file")
+	assert.Equal("id", config.Providers.OIDC.ClientID, "namespace variable should be read from environment")
+	assert.Equal("secret", config.Providers.OIDC.ClientSecret, "namespace variable should be read from environment")
+	assert.Equal("https://accounts.google.com", config.Providers.OIDC.IssuerURL)
 	assert.Equal(types.CookieDomains{
 		types.NewCookieDomain("test1.com"),
 		types.NewCookieDomain("example.org"),
 	}, config.Cookie.Domains, "array variable should be read from environment COOKIE_DOMAIN")
 	assert.Equal([]string{"test2.com", "example.org"}, config.Whitelist.Domains, "array variable should be read from environment DOMAIN")
 	assert.Equal([]string{"test3.com", "example.org"}, config.Whitelist.Users, "array variable should be read from environment WHITELIST")
-
 }
 
 func TestConfigTrustedNetworks(t *testing.T) {
