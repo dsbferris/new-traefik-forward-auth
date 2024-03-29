@@ -25,7 +25,7 @@ import (
  * Tests
  */
 
-func TestServerRootHandler(t *testing.T) {
+func TestServerRewriteHeaders(t *testing.T) {
 	assert := assert.New(t)
 	config := newOauthConfig()
 	logger, _ := logging.NewLogger(types.FORMAT_JSON, types.LEVEL_DEBUG)
@@ -36,7 +36,7 @@ func TestServerRootHandler(t *testing.T) {
 	req.Header.Add("X-Forwarded-Proto", "https")
 	req.Header.Add("X-Forwarded-Host", "example.com")
 	req.Header.Add("X-Forwarded-Uri", "/foo?q=bar")
-	NewServer(logger, config).RootHandler(httptest.NewRecorder(), req)
+	NewServer(logger, config).server.Handler.ServeHTTP(httptest.NewRecorder(), req)
 
 	assert.Equal("GET", req.Method, "x-forwarded-method should be read into request")
 	assert.Equal("example.com", req.Host, "x-forwarded-host should be read into request")
@@ -49,7 +49,7 @@ func TestServerRootHandler(t *testing.T) {
 	req.Header.Add("X-Forwarded-Method", "GET")
 	req.Header.Add("X-Forwarded-Proto", "https")
 	req.Header.Add("X-Forwarded-Host", "example.com")
-	NewServer(logger, config).RootHandler(httptest.NewRecorder(), req)
+	NewServer(logger, config).server.Handler.ServeHTTP(httptest.NewRecorder(), req)
 
 	assert.Equal("GET", req.Method, "x-forwarded-method should be read into request")
 	assert.Equal("example.com", req.Host, "x-forwarded-host should be read into request")
@@ -442,7 +442,7 @@ func doHttpRequestWithLogger(r *http.Request, c *http.Cookie, config *appconfig.
 		r.Header.Add("Cookie", c)
 	}
 
-	NewServer(logger, config).RootHandler(w, r)
+	NewServer(logger, config).server.Handler.ServeHTTP(w, r)
 
 	res := w.Result()
 	body, _ := io.ReadAll(res.Body)

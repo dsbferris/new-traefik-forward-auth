@@ -112,6 +112,7 @@ func (config *AppConfig) Validate() error {
 	}
 
 	// Check for show stopper errors
+	// TODO URL PATH MUST NOT BE JUST /
 	if !strings.HasPrefix(config.UrlPath, "/") {
 		return ErrInvalidPath
 	}
