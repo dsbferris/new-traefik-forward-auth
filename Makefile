@@ -16,15 +16,15 @@ build-dev:
 	docker buildx build \
 		--load \
 		-f dev.Dockerfile \
-		-t ghcr.io/dsbferris/traefik-forward-auth:dev \
+		-t ghcr.io/dsbferris/new-traefik-forward-auth:dev \
 		. 
 
 build:
 	docker buildx build \
 		--load \
 		-f Dockerfile \
-		-t ghcr.io/dsbferris/traefik-forward-auth:latest \
-		-t ghcr.io/dsbferris/traefik-forward-auth:$(VERSION) \
+		-t ghcr.io/dsbferris/new-traefik-forward-auth:latest \
+		-t ghcr.io/dsbferris/new-traefik-forward-auth:$(VERSION) \
 		. 
 
 push:
@@ -32,8 +32,8 @@ push:
 		--platform linux/amd64,linux/arm64 \
 		--push \
 		-f Dockerfile \
-		-t ghcr.io/dsbferris/traefik-forward-auth:latest \
-		-t ghcr.io/dsbferris/traefik-forward-auth:$(VERSION) \
+		-t ghcr.io/dsbferris/new-traefik-forward-auth:latest \
+		-t ghcr.io/dsbferris/new-traefik-forward-auth:$(VERSION) \
 		. 
 	git tag $(VERSION)
 	git push origin $(VERSION)
