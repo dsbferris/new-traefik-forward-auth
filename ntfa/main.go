@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/dsbferris/new-traefik-forward-auth/appconfig"
 	"github.com/dsbferris/new-traefik-forward-auth/logging"
@@ -34,23 +35,26 @@ func main() {
 func healthcheck() {
 	// args
 	// program-name healthcheck port
-	if len(os.Args) != 3 {
+	if len(os.Args) != 3 || strings.ToLower(os.Args[1]) != "healthcheck" {
 		return
 	}
-	if strings.ToLower(os.Args[1]) != "healthcheck" {
-		return
-	}
+
 	port, err := strconv.Atoi(os.Args[2])
 	if err != nil {
-		return
+		log.Fatalf("Error parsing port, %v", err)
 	}
-	url := fmt.Sprintf("localhost:%d/health", port)
-	resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", fmt.Sprintf("http://localhost:%d/health", port), nil)
 	if err != nil {
-		os.Exit(1)
+		log.Fatalf("Error creating request, %v", err)
+	}
+	resp, err := (&http.Client{Timeout: time.Second * 3}).Do(req)
+	if err != nil {
+		log.Fatalf("Unhealthy, %v", err)
+		fmt.Println("Unhealthy, error")
 	}
 	if resp.StatusCode != 200 {
-		os.Exit(1)
+		log.Fatalln("Unhealthy, non 200")
 	}
+	log.Println("Healthy")
 	os.Exit(0)
 }
