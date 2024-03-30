@@ -9,8 +9,8 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/main.go",
-            "args": ["--config", ".env.config.test"]
+            "program": "${workspaceFolder}/ntfa/main.go",
+            "args": ["healthcheck", "4181"]
         }
     ]
 }

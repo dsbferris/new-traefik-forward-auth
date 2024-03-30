@@ -40,7 +40,7 @@ func (s *Server) Logging(next http.Handler) http.Handler {
 			sb.WriteString(c.String())
 		}
 
-		s.logger.Debug("received request",
+		logger := s.logger.With(
 			slog.String(idKey, r.Header.Get(idKey)),
 			slog.Group("request",
 				slog.String("method", r.Method),
@@ -58,6 +58,14 @@ func (s *Server) Logging(next http.Handler) http.Handler {
 			),
 			slog.String("cookies", sb.String()),
 		)
+
+		if r.URL.Path == "/health" {
+			// do not let healthcheck spam the logs
+			logger.Debug("received request")
+		} else {
+			logger.Info("received request")
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }
