@@ -146,7 +146,7 @@ func (s *Server) AuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Generate cookie
 	http.SetCookie(w, s.auth.MakeCookie(r, user))
-	slog.Info("successfully generated auth cookie, redirecting user",
+	logger.Info("successfully generated auth cookie, redirecting user",
 		slog.String("provider", providerName),
 		slog.String("redirect", redirect),
 		slog.String("user", user),
