@@ -9,6 +9,44 @@ but it should be fairly easy for you to migrate.
 
 NOTE: This is still a fork, NOT a whole from zero rewrite. Sadly github doesnt allow forking from yourself.
 
+- [NTFA (New Traefik Forward Auth)](#ntfa-new-traefik-forward-auth)
+  - [Changes](#changes)
+    - [What did not change](#what-did-not-change)
+  - [Releases](#releases)
+  - [Is this repo maintained? and contributing](#is-this-repo-maintained-and-contributing)
+  - [Migration Guide](#migration-guide)
+    - [Migrating when using Kubernetes](#migrating-when-using-kubernetes)
+    - [Migrating when using rules](#migrating-when-using-rules)
+  - [Documentation](#documentation)
+    - [How to provide configuration](#how-to-provide-configuration)
+      - [As flags](#as-flags)
+      - [Env Variable/File](#env-variablefile)
+      - [Ini config](#ini-config)
+    - [Auth Host](#auth-host)
+    - [Header names](#header-names)
+    - [Url Path](#url-path)
+    - [Secret](#secret)
+    - [User id path](#user-id-path)
+    - [Cookie Settings](#cookie-settings)
+      - [Domains](#domains)
+      - [Insecure](#insecure)
+      - [Lifetime](#lifetime)
+    - [Whitelist](#whitelist)
+      - [Networks](#networks)
+    - [OIDC and Oauth](#oidc-and-oauth)
+      - [Scopes](#scopes)
+      - [Prompt](#prompt)
+    - [Oauth](#oauth)
+      - [Token style](#token-style)
+  - [Operation Modes](#operation-modes)
+    - [Overlay Mode](#overlay-mode)
+    - [Auth Host Mode](#auth-host-mode)
+    - [Logging in](#logging-in)
+    - [Logging Out](#logging-out)
+  - [Copyright](#copyright)
+  - [License](#license)
+
+
 ## Changes
 - Updated to Go 1.22.1
 - Updated all libraries
