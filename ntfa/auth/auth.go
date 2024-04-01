@@ -108,7 +108,7 @@ func (a *Auth) ValidateUser(user string) bool {
 
 	// Email whitelist validation
 	if len(whitelist) > 0 {
-		if a.ValidateWhitelist(user, whitelist) {
+		if a.validateWhitelist(user, whitelist) {
 			return true
 		}
 
@@ -120,7 +120,7 @@ func (a *Auth) ValidateUser(user string) bool {
 
 	// Domain validation
 	if len(domains) > 0 {
-		if a.ValidateDomains(user, domains) {
+		if a.validateDomains(user, domains) {
 			return true
 		}
 	}
@@ -128,8 +128,8 @@ func (a *Auth) ValidateUser(user string) bool {
 	return false
 }
 
-// ValidateWhitelist checks if the email is in whitelist
-func (a *Auth) ValidateWhitelist(user string, whitelist []string) bool {
+// validateWhitelist checks if the email is in whitelist
+func (a *Auth) validateWhitelist(user string, whitelist []string) bool {
 	for _, whitelist := range whitelist {
 		if user == whitelist {
 			return true
@@ -138,8 +138,8 @@ func (a *Auth) ValidateWhitelist(user string, whitelist []string) bool {
 	return false
 }
 
-// ValidateDomains checks if the email matches a whitelisted domain
-func (a *Auth) ValidateDomains(user string, domains []string) bool {
+// validateDomains checks if the email matches a whitelisted domain
+func (a *Auth) validateDomains(user string, domains []string) bool {
 	parts := strings.Split(user, "@")
 	if len(parts) < 2 {
 		return false
