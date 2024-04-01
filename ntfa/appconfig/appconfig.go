@@ -57,8 +57,9 @@ type AppConfig struct {
 
 	HeaderNames []string `long:"header-names" env:"HEADER_NAMES" default:"X-Forwarded-User" description:"User header names, can be set multiple times, ONLY comma separated as ENV"`
 	UrlPath     string   `long:"url-path" env:"URL_PATH" default:"/auth" description:"Callback URL Path"`
-	Secret      string   `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
-	UserPath    string   `long:"user-id-path" env:"USER_ID_PATH" default:"email" description:"Dot notation path of a UserID for use with whitelist and X-Forwarded-User"`
+	// TODO MOVE SECRET INTO COOKIE CONFIG AS IT IS FOR COOKIE
+	Secret   string `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
+	UserPath string `long:"user-id-path" env:"USER_ID_PATH" default:"email" description:"Dot notation path of a UserID for use with whitelist and X-Forwarded-User"`
 
 	Cookie    CookieConfig    `group:"Cookie Options" namespace:"cookie" env-namespace:"COOKIE"`
 	Whitelist WhitelistConfig `group:"Whitelist Options" namespace:"whitelist" env-namespace:"WHITELIST"`
