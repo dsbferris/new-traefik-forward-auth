@@ -1,0 +1,43 @@
+services:
+  traefik:
+    image: traefik:v3.0.0-rc3
+    command: --providers.docker
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  whoami:
+    image: traefik/whoami:latest
+    labels:
+      - "traefik.http.routers.whoami.rule=Host(`whoami.example.com`)"
+      - "traefik.http.routers.whoami.middlewares=ntfa"
+
+  ntfa:
+    image: ghcr.io/dsbferris/new-traefik-forward-auth:latest
+    environment:
+      # - SECRET=VERY_VERY_SECRET
+      # - PROVIDERS_OIDC_ISSUER_URL=https://accounts.google.com
+      # - PROVIDERS_OIDC_CLIENT_ID=<YOUR-CLIENT-ID>
+      # - PROVIDERS_OIDC_CLIENT_SECRET=<YOUR-CLIENT-SECRET>
+      # - LOG_LEVEL=debug
+      # - AUTH_HOST=auth.example.com
+      # - COOKIE_DOMAINS=example.com
+      # - COOKIE_INSECURE=true
+    labels:
+      traefik.http.services.ntfa.loadbalancer.server.port: 4181
+      traefik.http.routers.ntfa.rule: Host(`auth.example.com`)
+      traefik.http.routers.ntfa.entrypoints: websecure
+      traefik.http.middlewares.ntfa.forwardauth.authResponseHeaders: X-Forwarded-User
+
+      # This requires COOKIE_INSECURE=true. Ok for testing.
+      # The address has to match the ntfa-container hostname
+      traefik.http.middlewares.ntfa.forwardauth.address: http://ntfa:4181
+
+      # Below is the recommended production config.
+      # Make sure the traefik container itself is DNS-wise aware where auth.example.com is located.
+      # You might want to run a "apt install dnsutils; nslookup auth.example.com" inside the traefik container to validate it.
+      # This does NOT require COOKIE_INSECURE. If this doesnt work, 99% it's DNS related.
+      # 
+      # traefik.http.middlewares.ntfa.forwardauth.address: https://auth.example.com
