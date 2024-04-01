@@ -56,7 +56,7 @@ type AppConfig struct {
 	AuthHost string `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 
 	HeaderNames []string `long:"header-names" env:"HEADER_NAMES" default:"X-Forwarded-User" description:"User header names, can be set multiple times, ONLY comma separated as ENV"`
-	UrlPath     string   `long:"url-path" env:"URL_PATH" default:"/_oauth" description:"Callback URL Path"`
+	UrlPath     string   `long:"url-path" env:"URL_PATH" default:"/auth" description:"Callback URL Path"`
 	Secret      string   `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
 	UserPath    string   `long:"user-id-path" env:"USER_ID_PATH" default:"email" description:"Dot notation path of a UserID for use with whitelist and X-Forwarded-User"`
 
