@@ -3,7 +3,6 @@ package auth
 import (
 	"crypto/hmac"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/dsbferris/new-traefik-forward-auth/internal/appconfig"
 	"github.com/dsbferris/new-traefik-forward-auth/internal/provider"
+	"golang.org/x/crypto/sha3"
 )
 
 // Request Validation
@@ -414,8 +414,8 @@ func (a *Auth) MatchCookieDomains(domain string) (bool, string) {
 
 // Create cookie hmac
 func (a *Auth) CookieSignature(r *http.Request, email, expires string) string {
-	// TODO switch to SHA3_512 or so
-	hash := hmac.New(sha256.New, []byte(a.config.Cookie.Secret))
+	//hash := hmac.New(sha256.New, []byte(a.config.Cookie.Secret))
+	hash := hmac.New(sha3.New512, []byte(a.config.Cookie.Secret))
 	hash.Write([]byte(a.CookieDomain(r)))
 	hash.Write([]byte(email))
 	hash.Write([]byte(expires))
