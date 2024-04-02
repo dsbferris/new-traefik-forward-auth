@@ -17,7 +17,7 @@ import (
 var (
 	ErrSecretEmpty      = errors.New("secret must be set")
 	ErrHeaderNamesEmpty = errors.New("header-names must be set")
-	ErrInvalidPath      = errors.New("path must start with a /")
+	ErrInvalidPath      = errors.New("path must not be empty and start with a /")
 	ErrMultipleProvider = errors.New("do not setup multiple providers")
 	ErrNoProvider       = errors.New("no provider set")
 )
@@ -112,8 +112,7 @@ func (config *AppConfig) Validate() error {
 	}
 
 	// Check for show stopper errors
-	// TODO URL PATH MUST NOT BE JUST /
-	if !strings.HasPrefix(config.UrlPath, "/") {
+	if strings.TrimSpace(config.UrlPath) == "" || !strings.HasPrefix(config.UrlPath, "/") {
 		return ErrInvalidPath
 	}
 	if len(config.Cookie.Secret) == 0 || strings.TrimSpace(config.Cookie.Secret) == "" {
