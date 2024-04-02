@@ -8,7 +8,7 @@ Application Options:
       --auth-host=                                 Single host to use when returning from 3rd party auth [$AUTH_HOST]
       --header-names=                              User header names, can be set multiple times, ONLY comma separated as ENV (default: X-Forwarded-User) [$HEADER_NAMES]
       --url-path=                                  Callback URL Path (default: /auth) [$URL_PATH]
-      --secret=                                    Secret used for signing (required) [$SECRET]
+      --cookie.secret=                                    Secret used for signing (required) [$SECRET]
       --user-id-path=                              Dot notation path of a UserID for use with whitelist and X-Forwarded-User (default: email) [$USER_ID_PATH]
 
 Log Options:

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dsbferris/new-traefik-forward-auth/provider"
-	"github.com/dsbferris/new-traefik-forward-auth/types"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/provider"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/types"
 	"github.com/jessevdk/go-flags"
 	"github.com/joho/godotenv"
 )
@@ -38,6 +38,7 @@ type WhitelistConfig struct {
 }
 
 type CookieConfig struct {
+	Secret   string              `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
 	Domains  types.CookieDomains `long:"domains" env:"DOMAINS" env-delim:"," description:"List of Domains to set auth cookie on, comma separated or set multiple times"`
 	Insecure bool                `long:"insecure" env:"INSECURE" description:"Use insecure cookies"`
 	Name     string              `long:"name" env:"NAME" default:"_forward_auth" description:"Cookie Name"`
@@ -56,10 +57,8 @@ type AppConfig struct {
 	AuthHost string `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 
 	HeaderNames []string `long:"header-names" env:"HEADER_NAMES" default:"X-Forwarded-User" description:"User header names, can be set multiple times, ONLY comma separated as ENV"`
-	UrlPath     string   `long:"url-path" env:"URL_PATH" default:"/auth" description:"Callback URL Path"`
-	// TODO MOVE SECRET INTO COOKIE CONFIG AS IT IS FOR COOKIE
-	Secret   string `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
-	UserPath string `long:"user-id-path" env:"USER_ID_PATH" default:"email" description:"Dot notation path of a UserID for use with whitelist and X-Forwarded-User"`
+	UrlPath     string   `long:"url-path" env:"URL_PATH" default:"/_oauth" description:"Callback URL Path"`
+	UserPath    string   `long:"user-id-path" env:"USER_ID_PATH" default:"email" description:"Dot notation path of a UserID for use with whitelist and X-Forwarded-User"`
 
 	Cookie    CookieConfig    `group:"Cookie Options" namespace:"cookie" env-namespace:"COOKIE"`
 	Whitelist WhitelistConfig `group:"Whitelist Options" namespace:"whitelist" env-namespace:"WHITELIST"`
@@ -117,7 +116,7 @@ func (config *AppConfig) Validate() error {
 	if !strings.HasPrefix(config.UrlPath, "/") {
 		return ErrInvalidPath
 	}
-	if len(config.Secret) == 0 || strings.TrimSpace(config.Secret) == "" {
+	if len(config.Cookie.Secret) == 0 || strings.TrimSpace(config.Cookie.Secret) == "" {
 		return ErrSecretEmpty
 	}
 

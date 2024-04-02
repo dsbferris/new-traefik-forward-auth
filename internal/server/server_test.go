@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dsbferris/new-traefik-forward-auth/appconfig"
-	"github.com/dsbferris/new-traefik-forward-auth/auth"
-	"github.com/dsbferris/new-traefik-forward-auth/logging"
-	"github.com/dsbferris/new-traefik-forward-auth/types"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/appconfig"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/auth"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/logging"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
@@ -461,7 +461,7 @@ func doHttpRequest(r *http.Request, c *http.Cookie, config *appconfig.AppConfig)
 
 func newOidcConfig() *appconfig.AppConfig {
 	config, err := appconfig.NewConfig([]string{
-		"--secret=veryverysecret",
+		"--cookie.secret=veryverysecret",
 		"--providers.oidc.client-id=id",
 		"--providers.oidc.client-secret=secret",
 		"--providers.oidc.issuer-url=https://accounts.google.com",
@@ -479,7 +479,7 @@ func newOidcConfig() *appconfig.AppConfig {
 
 func newOauthConfig(configArgs ...string) *appconfig.AppConfig {
 	args := []string{
-		"--secret=veryverysecret",
+		"--cookie.secret=veryverysecret",
 		"--providers.oauth.client-id=id",
 		"--providers.oauth.client-secret=secret",
 		"--providers.oauth.auth-url=https://accounts.google.com/o/oauth2/v2/auth",

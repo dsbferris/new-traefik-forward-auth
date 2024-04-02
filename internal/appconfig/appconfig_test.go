@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dsbferris/new-traefik-forward-auth/types"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,7 +32,7 @@ func TestNewConfig(t *testing.T) {
 
 		assert := assert.New(t)
 		config, err := NewConfig([]string{
-			"--secret=veryverysecret",
+			"--cookie.secret=veryverysecret",
 			"--providers.oidc.client-id=id",
 			"--providers.oidc.client-secret=secret",
 			"--providers.oidc.issuer-url=https://accounts.google.com",
@@ -49,7 +49,7 @@ func TestNewConfig(t *testing.T) {
 	t.Run("validate with empty header names", func(t *testing.T) {
 		assert := assert.New(t)
 		config, err := NewConfig([]string{
-			"--secret=veryverysecret",
+			"--cookie.secret=veryverysecret",
 			"--providers.oidc.client-id=id",
 			"--providers.oidc.client-secret=secret",
 			"--providers.oidc.issuer-url=https://accounts.google.com",
@@ -66,7 +66,7 @@ func TestNewConfig(t *testing.T) {
 	t.Run("validate with no provider", func(t *testing.T) {
 		assert := assert.New(t)
 		config, err := NewConfig([]string{
-			"--secret=veryverysecret",
+			"--cookie.secret=veryverysecret",
 		})
 		assert.Nil(err)
 		err = config.Validate()
@@ -78,7 +78,7 @@ func TestNewConfig(t *testing.T) {
 	t.Run("validate with multiple providers", func(t *testing.T) {
 		assert := assert.New(t)
 		config, err := NewConfig([]string{
-			"--secret=veryverysecret",
+			"--cookie.secret=veryverysecret",
 
 			"--providers.oauth.client-id=id",
 			"--providers.oauth.client-secret=secret",
@@ -101,7 +101,7 @@ func TestNewConfig(t *testing.T) {
 func TestConfigDefaults(t *testing.T) {
 	assert := assert.New(t)
 	config, err := NewConfig([]string{
-		"--secret=veryverysecret",
+		"--cookie.secret=veryverysecret",
 		"--providers.oidc.client-id=id",
 		"--providers.oidc.client-secret=secret",
 		"--providers.oidc.issuer-url=https://accounts.google.com",
@@ -132,7 +132,7 @@ func TestConfigDefaults(t *testing.T) {
 func TestConfigParseArgs(t *testing.T) {
 	assert := assert.New(t)
 	config, err := NewConfig([]string{
-		"--secret=veryverysecret",
+		"--cookie.secret=veryverysecret",
 		"--providers.oidc.client-id=id",
 		"--providers.oidc.client-secret=secret",
 		"--providers.oidc.issuer-url=https://accounts.google.com",
@@ -173,7 +173,7 @@ func TestConfigParseUnknownFlags(t *testing.T) {
 func TestConfigSetMultipleTimes(t *testing.T) {
 	assert := assert.New(t)
 	config, err := NewConfig([]string{
-		"--secret=veryverysecret",
+		"--cookie.secret=veryverysecret",
 		"--providers.oidc.client-id=id",
 		"--providers.oidc.client-secret=secret",
 		"--providers.oidc.issuer-url=https://accounts.google.com",
@@ -191,6 +191,7 @@ func TestConfigParseIni(t *testing.T) {
 	assert := assert.New(t)
 	configFile1, _ := filepath.Abs("../../testfiles/config0.ini")
 	configFile2, _ := filepath.Abs("../../testfiles/config1.ini")
+
 	config, err := NewConfig([]string{
 		// "--cookie.csrf-name=csrfcookiename", // the order here matters!
 		"--config=" + configFile1,
@@ -210,9 +211,9 @@ func TestConfigParseEnvironment(t *testing.T) {
 	assert := assert.New(t)
 	os.Setenv("COOKIE_NAME", "env_cookie_name")
 	os.Setenv("COOKIE_DOMAINS", "test1.com,example.org")
+	os.Setenv("COOKIE_SECRET", "veryverysecret")
 	os.Setenv("WHITELIST_DOMAINS", "test2.com,example.org")
 	os.Setenv("WHITELIST_USERS", "test3.com,example.org")
-	os.Setenv("SECRET", "veryverysecret")
 	os.Setenv("PROVIDERS_OIDC_ISSUER_URL", "https://accounts.google.com")
 	os.Setenv("PROVIDERS_OIDC_CLIENT_ID", "id")
 	os.Setenv("PROVIDERS_OIDC_CLIENT_SECRET", "secret")
@@ -229,7 +230,7 @@ func TestConfigParseEnvironment(t *testing.T) {
 	}, config.Cookie.Domains, "array variable should be read from environment COOKIE_DOMAINS")
 	assert.Equal([]string{"test2.com", "example.org"}, config.Whitelist.Domains, "array variable should be read from environment WHITELIST_DOMAINS")
 	assert.Equal([]string{"test3.com", "example.org"}, config.Whitelist.Users, "array variable should be read from environment WHITELIST_USERS")
-	assert.Equal("veryverysecret", config.Secret)
+	assert.Equal("veryverysecret", config.Cookie.Secret)
 	assert.Equal("https://accounts.google.com", config.Providers.OIDC.IssuerURL)
 	assert.Equal("id", config.Providers.OIDC.ClientID, "namespace variable should be read from environment")
 	assert.Equal("secret", config.Providers.OIDC.ClientSecret, "namespace variable should be read from environment")
@@ -274,7 +275,7 @@ func TestConfigTrustedNetworks(t *testing.T) {
 	assert := assert.New(t)
 
 	config, err := NewConfig([]string{
-		"--secret=veryverysecret",
+		"--cookie.secret=veryverysecret",
 		"--providers.oidc.client-id=id",
 		"--providers.oidc.client-secret=secret",
 		"--providers.oidc.issuer-url=https://accounts.google.com",
@@ -307,7 +308,7 @@ func TestConfigTrustedNetworks2(t *testing.T) {
 	assert := assert.New(t)
 
 	config, err := NewConfig([]string{
-		"--secret=veryverysecret",
+		"--cookie.secret=veryverysecret",
 		"--providers.oidc.client-id=id",
 		"--providers.oidc.client-secret=secret",
 		"--providers.oidc.issuer-url=https://accounts.google.com",

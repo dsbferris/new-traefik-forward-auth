@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dsbferris/new-traefik-forward-auth/logging"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/logging"
 	"github.com/stretchr/testify/assert"
 	"github.com/tidwall/gjson"
 )

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dsbferris/new-traefik-forward-auth/types"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/types"
 	_ "github.com/jessevdk/go-flags" // import, so linter knows about multiple definition of choice
 	"golang.org/x/oauth2"
 )

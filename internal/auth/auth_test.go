@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dsbferris/new-traefik-forward-auth/appconfig"
-	"github.com/dsbferris/new-traefik-forward-auth/provider"
-	"github.com/dsbferris/new-traefik-forward-auth/types"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/appconfig"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/provider"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/types"
 )
 
 /**
@@ -24,7 +24,7 @@ var authHost = "auth.example.com"
 
 func newPseudoConfig() *appconfig.AppConfig {
 	c, err := appconfig.NewConfig([]string{
-		"--secret=veryverysecret",
+		"--cookie.secret=veryverysecret",
 		"--providers.oidc.client-id=id",
 		"--providers.oidc.client-secret=secret",
 		"--providers.oidc.issuer-url=https://accounts.google.com",

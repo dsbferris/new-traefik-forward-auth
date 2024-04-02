@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dsbferris/new-traefik-forward-auth/appconfig"
-	"github.com/dsbferris/new-traefik-forward-auth/provider"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/appconfig"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/provider"
 )
 
 // Request Validation
@@ -415,7 +415,7 @@ func (a *Auth) MatchCookieDomains(domain string) (bool, string) {
 // Create cookie hmac
 func (a *Auth) CookieSignature(r *http.Request, email, expires string) string {
 	// TODO switch to SHA3_512 or so
-	hash := hmac.New(sha256.New, []byte(a.config.Secret))
+	hash := hmac.New(sha256.New, []byte(a.config.Cookie.Secret))
 	hash.Write([]byte(a.CookieDomain(r)))
 	hash.Write([]byte(email))
 	hash.Write([]byte(expires))

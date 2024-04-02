@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/dsbferris/new-traefik-forward-auth/auth"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/auth"
 )
 
 func escapeNewlines(data string) string {

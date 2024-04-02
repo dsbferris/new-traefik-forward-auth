@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/dsbferris/new-traefik-forward-auth/appconfig"
-	"github.com/dsbferris/new-traefik-forward-auth/auth"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/appconfig"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/auth"
 )
 
 // Server contains router and handler methods

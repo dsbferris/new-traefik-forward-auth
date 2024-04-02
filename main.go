@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dsbferris/new-traefik-forward-auth/appconfig"
-	"github.com/dsbferris/new-traefik-forward-auth/logging"
-	"github.com/dsbferris/new-traefik-forward-auth/server"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/appconfig"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/logging"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/server"
 )
 
 func main() {

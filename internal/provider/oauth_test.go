@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/dsbferris/new-traefik-forward-auth/types"
+	"github.com/dsbferris/new-traefik-forward-auth/internal/types"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
 )
