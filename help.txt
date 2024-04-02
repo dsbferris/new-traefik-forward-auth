@@ -17,6 +17,7 @@ Log Options:
 
 Cookie Options:
       --cookie.secret=                             Secret used for signing (required) [$COOKIE_SECRET]
+      --cookie.secret-file=                        Path to a file containing the cookie secret [$COOKIE_SECRET_FILE]
       --cookie.domains=                            List of Domains to set auth cookie on, comma separated or set multiple times [$COOKIE_DOMAINS]
       --cookie.insecure                            Use insecure cookies [$COOKIE_INSECURE]
       --cookie.name=                               Cookie Name (default: _forward_auth) [$COOKIE_NAME]
@@ -32,7 +33,9 @@ Whitelist Options:
 OIDC Provider:
       --providers.oidc.issuer-url=                 Issuer URL [$PROVIDERS_OIDC_ISSUER_URL]
       --providers.oidc.client-id=                  Client ID [$PROVIDERS_OIDC_CLIENT_ID]
+      --providers.oidc.client-id-file=             Path to a file containing the client id [$PROVIDERS_OIDC_CLIENT_ID_FILE]
       --providers.oidc.client-secret=              Client Secret [$PROVIDERS_OIDC_CLIENT_SECRET]
+      --providers.oidc.client-secret-file=         Path to a file containing the client secret [$PROVIDERS_OIDC_CLIENT_SECRET_FILE]
       --providers.oidc.scope=                      Scopes (default: profile, email) [$PROVIDERS_OIDC_SCOPE]
       --providers.oidc.prompt=                     Optional prompt query [$PROVIDERS_OIDC_PROMPT]
       --providers.oidc.resource=                   Optional resource indicator [$PROVIDERS_OIDC_RESOURCE]
@@ -42,7 +45,9 @@ Generic OAuth2 Provider:
       --providers.oauth.token-url=                 Token URL [$PROVIDERS_OAUTH_TOKEN_URL]
       --providers.oauth.user-url=                  URL used to retrieve user info [$PROVIDERS_OAUTH_USER_URL]
       --providers.oauth.client-id=                 Client ID [$PROVIDERS_OAUTH_CLIENT_ID]
+      --providers.oauth.client-id-file=            Path to a file containing the client id [$PROVIDERS_OAUTH_CLIENT_ID_FILE]
       --providers.oauth.client-secret=             Client Secret [$PROVIDERS_OAUTH_CLIENT_SECRET]
+      --providers.oauth.client-secret-file=        Path to a file containing the client secret [$PROVIDERS_OAUTH_CLIENT_SECRET_FILE]
       --providers.oauth.token-style=[header|query] How token is presented when querying the User URL (default: header) [$PROVIDERS_OAUTH_TOKEN_STYLE]
       --providers.oauth.scope=                     Scopes (default: profile, email) [$PROVIDERS_OAUTH_SCOPE]
       --providers.oauth.prompt=                    Optional prompt query [$PROVIDERS_OAUTH_PROMPT]
