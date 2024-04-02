@@ -16,6 +16,8 @@ import (
  * Tests
  */
 
+// TODO: test docker secrets!
+
 func TestNewConfig(t *testing.T) {
 
 	t.Run("validate emtpy config", func(t *testing.T) {
