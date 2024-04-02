@@ -27,13 +27,42 @@ func TestOIDCName(t *testing.T) {
 }
 
 func TestOIDCSetup(t *testing.T) {
-	assert := assert.New(t)
-	p := OIDC{}
 
-	err := p.Setup()
-	if assert.Error(err) {
-		assert.Equal("providers.oidc.issuer-url, providers.oidc.client-id, providers.oidc.client-secret must be set", err.Error())
-	}
+	t.Run("issuer url", func(t *testing.T) {
+		assert := assert.New(t)
+		p := OIDC{}
+
+		err := p.Setup()
+		if assert.Error(err) {
+			assert.Equal(ErrMissingIssuerUrl, err)
+		}
+	})
+	t.Run("client id", func(t *testing.T) {
+		assert := assert.New(t)
+		p := OIDC{IssuerURL: "https://accounts.google.com"}
+
+		err := p.Setup()
+		if assert.Error(err) {
+			assert.Equal(ErrMissingClientID, err)
+		}
+	})
+	t.Run("client secret", func(t *testing.T) {
+		assert := assert.New(t)
+		p := OIDC{IssuerURL: "https://accounts.google.com", ClientID: "abc"}
+
+		err := p.Setup()
+		if assert.Error(err) {
+			assert.Equal(ErrMissingClientSecret, err)
+		}
+	})
+
+	t.Run("valid", func(t *testing.T) {
+		assert := assert.New(t)
+		p := OIDC{IssuerURL: "https://accounts.google.com", ClientID: "abc", ClientSecret: "def"}
+
+		err := p.Setup()
+		assert.Nil(err)
+	})
 }
 
 func TestOIDCGetLoginURL(t *testing.T) {

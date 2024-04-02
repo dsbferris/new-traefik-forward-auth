@@ -5,22 +5,26 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/dsbferris/new-traefik-forward-auth/internal/types"
 	_ "github.com/jessevdk/go-flags" // import, so linter knows about multiple definition of choice
 	"golang.org/x/oauth2"
 )
 
-var ErrInvalidSetup error = errors.New("providers.oauth.auth-url, providers.oauth.token-url, providers.oauth.user-url, providers.oauth.client-id, providers.oauth.client-secret, providers.oauth.token-style must be set")
+var ErrInvalidSetup error = errors.New("providers.oauth.auth-url, providers.oauth.token-url, providers.oauth.user-url, providers.oauth.token-style must be set")
 
 // OAuth provider
 type OAuth struct {
-	AuthURL      string           `long:"auth-url" env:"AUTH_URL" description:"Auth/Login URL"`
-	TokenURL     string           `long:"token-url" env:"TOKEN_URL" description:"Token URL"`
-	UserURL      string           `long:"user-url" env:"USER_URL" description:"URL used to retrieve user info"`
-	ClientID     string           `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
-	ClientSecret string           `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
-	TokenStyle   types.TokenStyle `long:"token-style" env:"TOKEN_STYLE" default:"header" choice:"header" choice:"query" description:"How token is presented when querying the User URL"`
+	AuthURL          string           `long:"auth-url" env:"AUTH_URL" description:"Auth/Login URL"`
+	TokenURL         string           `long:"token-url" env:"TOKEN_URL" description:"Token URL"`
+	UserURL          string           `long:"user-url" env:"USER_URL" description:"URL used to retrieve user info"`
+	ClientID         string           `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
+	ClientIDFile     string           `long:"client-id-file" env:"CLIENT_ID_FILE" description:"Path to a file containing the client id"`
+	ClientSecret     string           `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
+	ClientSecretFile string           `long:"client-secret-file" env:"CLIENT_SECRET_FILE" description:"Path to a file containing the client secret"`
+	TokenStyle       types.TokenStyle `long:"token-style" env:"TOKEN_STYLE" default:"header" choice:"header" choice:"query" description:"How token is presented when querying the User URL"`
 
 	OAuthProviderConfig
 }
@@ -36,10 +40,37 @@ func (o *OAuth) Setup() error {
 	if o.AuthURL == "" ||
 		o.TokenURL == "" ||
 		o.UserURL == "" ||
-		o.ClientID == "" ||
-		o.ClientSecret == "" ||
 		o.TokenStyle.String() == "" {
 		return ErrInvalidSetup
+	}
+	if o.ClientID == "" {
+		if o.ClientIDFile == "" {
+			return ErrMissingClientID
+		}
+		b, err := os.ReadFile(o.ClientIDFile)
+		if err != nil {
+			return errors.Join(ErrMissingClientID, err)
+		}
+		sb := strings.TrimSpace(string(b))
+		if sb == "" {
+			return ErrMissingClientID
+		}
+		o.ClientID = sb
+	}
+
+	if o.ClientSecret == "" {
+		if o.ClientSecretFile == "" {
+			return ErrMissingClientSecret
+		}
+		b, err := os.ReadFile(o.ClientSecretFile)
+		if err != nil {
+			return errors.Join(ErrMissingClientSecret, err)
+		}
+		sb := strings.TrimSpace(string(b))
+		if sb == "" {
+			return ErrMissingClientSecret
+		}
+		o.ClientSecret = sb
 	}
 
 	// TODO valdidate  can be parsed into url

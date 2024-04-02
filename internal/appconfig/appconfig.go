@@ -38,12 +38,13 @@ type WhitelistConfig struct {
 }
 
 type CookieConfig struct {
-	Secret   string              `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
-	Domains  types.CookieDomains `long:"domains" env:"DOMAINS" env-delim:"," description:"List of Domains to set auth cookie on, comma separated or set multiple times"`
-	Insecure bool                `long:"insecure" env:"INSECURE" description:"Use insecure cookies"`
-	Name     string              `long:"name" env:"NAME" default:"_forward_auth" description:"Cookie Name"`
-	CSRFName string              `long:"csrf-name" env:"CSRF_NAME" default:"_forward_auth_csrf" description:"CSRF Cookie Name"`
-	Lifetime time.Duration       `long:"lifetime" env:"LIFETIME" default:"12h" description:"Forward Auth Cookie Lifetime. See time.ParseDuration() for valid values."`
+	Secret     string              `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
+	SecretFile string              `long:"secret-file" env:"SECRET_FILE" description:"Path to a file containing the cookie secret"`
+	Domains    types.CookieDomains `long:"domains" env:"DOMAINS" env-delim:"," description:"List of Domains to set auth cookie on, comma separated or set multiple times"`
+	Insecure   bool                `long:"insecure" env:"INSECURE" description:"Use insecure cookies"`
+	Name       string              `long:"name" env:"NAME" default:"_forward_auth" description:"Cookie Name"`
+	CSRFName   string              `long:"csrf-name" env:"CSRF_NAME" default:"_forward_auth_csrf" description:"CSRF Cookie Name"`
+	Lifetime   time.Duration       `long:"lifetime" env:"LIFETIME" default:"12h" description:"Forward Auth Cookie Lifetime. See time.ParseDuration() for valid values."`
 }
 
 // AppConfig holds the runtime application appconfig
@@ -112,21 +113,38 @@ func (config *AppConfig) Validate() error {
 	}
 
 	// Check for show stopper errors
+	// url path
 	if strings.TrimSpace(config.UrlPath) == "" || !strings.HasPrefix(config.UrlPath, "/") {
 		return ErrInvalidPath
 	}
+
+	//secret
 	if len(config.Cookie.Secret) == 0 || strings.TrimSpace(config.Cookie.Secret) == "" {
-		return ErrSecretEmpty
+		if len(config.Cookie.SecretFile) == 0 || strings.TrimSpace(config.Cookie.SecretFile) == "" {
+			return ErrSecretEmpty
+		}
+		b, err := os.ReadFile(config.Cookie.SecretFile)
+		if err != nil {
+			return errors.Join(ErrSecretEmpty, err)
+		}
+		sb := strings.TrimSpace(string(b))
+		if len(sb) == 0 || sb == "" {
+			return ErrSecretEmpty
+		}
+		config.Cookie.Secret = sb
 	}
 
+	// header names
 	if len(config.HeaderNames) == 0 {
 		return ErrHeaderNamesEmpty
-	}
-	for _, h := range config.HeaderNames {
-		if strings.TrimSpace(h) == "" {
-			return ErrHeaderNamesEmpty
+	} else {
+		for _, h := range config.HeaderNames {
+			if strings.TrimSpace(h) == "" {
+				return ErrHeaderNamesEmpty
+			}
 		}
 	}
+
 	// TODO valdidate auth host can be parsed into url
 	//url, err := url.Parse(value)
 

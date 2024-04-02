@@ -4,16 +4,22 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os"
+	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
 )
 
+var ErrMissingIssuerUrl = errors.New("no issuer url provided")
+
 // OIDC provider
 type OIDC struct {
-	IssuerURL    string `long:"issuer-url" env:"ISSUER_URL" description:"Issuer URL"`
-	ClientID     string `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
-	ClientSecret string `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
+	IssuerURL        string `long:"issuer-url" env:"ISSUER_URL" description:"Issuer URL"`
+	ClientID         string `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
+	ClientIDFile     string `long:"client-id-file" env:"CLIENT_ID_FILE" description:"Path to a file containing the client id"`
+	ClientSecret     string `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
+	ClientSecretFile string `long:"client-secret-file" env:"CLIENT_SECRET_FILE" description:"Path to a file containing the client secret"`
 
 	OAuthProviderConfig
 
@@ -29,10 +35,37 @@ func (o OIDC) Name() string {
 // Setup performs validation and setup
 func (o *OIDC) Setup() error {
 	// Check parms
-	if o.IssuerURL == "" ||
-		o.ClientID == "" ||
-		o.ClientSecret == "" {
-		return errors.New("providers.oidc.issuer-url, providers.oidc.client-id, providers.oidc.client-secret must be set")
+	if o.IssuerURL == "" {
+		return ErrMissingIssuerUrl
+	}
+	if o.ClientID == "" {
+		if o.ClientIDFile == "" {
+			return ErrMissingClientID
+		}
+		b, err := os.ReadFile(o.ClientIDFile)
+		if err != nil {
+			return errors.Join(ErrMissingClientID, err)
+		}
+		sb := strings.TrimSpace(string(b))
+		if sb == "" {
+			return ErrMissingClientID
+		}
+		o.ClientID = sb
+	}
+
+	if o.ClientSecret == "" {
+		if o.ClientSecretFile == "" {
+			return ErrMissingClientSecret
+		}
+		b, err := os.ReadFile(o.ClientSecretFile)
+		if err != nil {
+			return errors.Join(ErrMissingClientSecret, err)
+		}
+		sb := strings.TrimSpace(string(b))
+		if sb == "" {
+			return ErrMissingClientSecret
+		}
+		o.ClientSecret = sb
 	}
 	// TODO valdidate  can be parsed into url
 	//url, err := url.Parse(value)

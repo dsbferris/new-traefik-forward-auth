@@ -2,10 +2,16 @@ package provider
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 
 	"github.com/tidwall/gjson"
+)
+
+var (
+	ErrMissingClientID     = errors.New("no client id provided")
+	ErrMissingClientSecret = errors.New("no client secret provided")
 )
 
 // Providers contains all the implemented providers
