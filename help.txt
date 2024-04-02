@@ -7,8 +7,7 @@ Application Options:
       --port=                                      Port to listen on (default: 4181) [$PORT]
       --auth-host=                                 Single host to use when returning from 3rd party auth [$AUTH_HOST]
       --header-names=                              User header names, can be set multiple times, ONLY comma separated as ENV (default: X-Forwarded-User) [$HEADER_NAMES]
-      --url-path=                                  Callback URL Path (default: /auth) [$URL_PATH]
-      --cookie.secret=                                    Secret used for signing (required) [$SECRET]
+      --url-path=                                  Callback URL Path (default: /_oauth) [$URL_PATH]
       --user-id-path=                              Dot notation path of a UserID for use with whitelist and X-Forwarded-User (default: email) [$USER_ID_PATH]
 
 Log Options:
@@ -17,6 +16,7 @@ Log Options:
   -f, --log.format=[text|json|pretty]              Log format (default: text) [$LOG_FORMAT]
 
 Cookie Options:
+      --cookie.secret=                             Secret used for signing (required) [$COOKIE_SECRET]
       --cookie.domains=                            List of Domains to set auth cookie on, comma separated or set multiple times [$COOKIE_DOMAINS]
       --cookie.insecure                            Use insecure cookies [$COOKIE_INSECURE]
       --cookie.name=                               Cookie Name (default: _forward_auth) [$COOKIE_NAME]
