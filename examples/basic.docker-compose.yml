@@ -17,14 +17,14 @@ services:
   ntfa:
     image: ghcr.io/dsbferris/new-traefik-forward-auth:latest
     environment:
-      # - SECRET=VERY_VERY_SECRET
-      # - PROVIDERS_OIDC_ISSUER_URL=https://accounts.google.com
-      # - PROVIDERS_OIDC_CLIENT_ID=<YOUR-CLIENT-ID>
-      # - PROVIDERS_OIDC_CLIENT_SECRET=<YOUR-CLIENT-SECRET>
-      # - LOG_LEVEL=debug
-      # - AUTH_HOST=auth.example.com
-      # - COOKIE_DOMAINS=example.com
-      # - COOKIE_INSECURE=true
+      - SECRET=VERY_VERY_SECRET
+      - PROVIDERS_OIDC_ISSUER_URL=https://accounts.google.com
+      - PROVIDERS_OIDC_CLIENT_ID=<YOUR-CLIENT-ID>
+      - PROVIDERS_OIDC_CLIENT_SECRET=<YOUR-CLIENT-SECRET>
+      - LOG_LEVEL=debug
+      - AUTH_HOST=auth.example.com
+      - COOKIE_DOMAINS=example.com
+      - COOKIE_INSECURE=true
     labels:
       traefik.http.services.ntfa.loadbalancer.server.port: 4181
       traefik.http.routers.ntfa.rule: Host(`auth.example.com`)

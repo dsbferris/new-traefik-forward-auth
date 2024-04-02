@@ -6,7 +6,7 @@ The examples assumes:
 - A test service like whoami.example.com
 - You have https setup in traefik
 - NTFA being accessible via auth.example.com
-- NTFA url-path set to "/auth" (default)
+- NTFA url-path set to "/_oauth" (default)
 
 ## Redirect URIs
 When you setup any auth provider, the provider should ask for valid/authorised "Redirect URIs". 
@@ -28,7 +28,7 @@ If you are using Auth Host Mode, this will just be your auth-host (e.g. https://
    2. Choose a client id, here example_id
    3. In Capability turn on "Client Authentication"
    4. In Login Settings set "Valid redirect URIs"
-      1. If using Auth-Host (recommended) "https://auth.example.com/auth"
+      1. If using Auth-Host (recommended) "https://auth.example.com/_oauth"
       2. If NOT using Auth-Host "https://whoami.example.com"
    5. Go to Credentials and copy the Client Secret
 

@@ -131,9 +131,9 @@ Make sure to add this name to the `authResponseHeaders` config option in traefik
 ### Url Path
 Customise the path that this service uses to handle the callback following authentication.
 
-Default: `/auth`
+Default: `/_oauth`
 
-Please note that when using the default [Overlay Mode](#overlay-mode) requests to this exact path will be intercepted by this service and not forwarded to your application. Use this option (or [Auth Host Mode](#auth-host-mode)) if the default `/auth` path will collide with an existing route in your application.
+Please note that when using the default [Overlay Mode](#overlay-mode) requests to this exact path will be intercepted by this service and not forwarded to your application. Use this option (or [Auth Host Mode](#auth-host-mode)) if the default `/_oauth` path will collide with an existing route in your application.
 
 ### Secret
 Used to sign cookies authentication, should be a random (e.g. `openssl rand -hex 32`)
@@ -246,7 +246,7 @@ You can set `redirect` query parameter to redirect on login (defaults to `/`).
 ### Logging Out
 
 The service provides an endpoint to clear a users session and "log them out". 
-The path is created by appending `/logout` to your configured `path` and so with the default settings it will be: `/auth/logout`.
+The path is created by appending `/logout` to your configured `path` and so with the default settings it will be: `/_oauth/logout`.
 
 You can set `redirect` query parameter to redirect on logout (defaults to `/`).
 Note that the user will not have a valid auth cookie after being logged out.
