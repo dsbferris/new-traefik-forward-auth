@@ -10,18 +10,19 @@ ARG TARGETARCH
 ENV GOOS=$TARGETOS
 ENV GOARCH=$TARGETARCH
 
-COPY ./ntfa/go.* ./
-
+# Running the go mod download here with only go.mod and go.sum
+# allows for efficient docker image layer caching
+COPY ./go.* ./
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
-COPY ./ntfa .
+COPY . .
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
     go build -o ./ntfa .
 
 
 ENTRYPOINT ["/app/ntfa"]
-
+# ENTRYPOINT [ "/usr/bin/bash" ]
 
 LABEL org.opencontainers.image.title=new-traefik-forward-auth
 LABEL org.opencontainers.image.description="New Forward authentication service for the Traefik reverse proxy"

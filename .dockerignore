@@ -1,7 +1,4 @@
-example
-.travis.yml
-.git
-.github
-.vscode
-.env
-.env*
+*
+!go.*
+!internal
+!main.go

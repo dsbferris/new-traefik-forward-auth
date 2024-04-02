@@ -7,16 +7,17 @@ WORKDIR /app
 
 # No shared libs in distroless
 ENV CGO_ENABLED 0
+
 ARG TARGETOS
 ARG TARGETARCH
 ENV GOOS=$TARGETOS
 ENV GOARCH=$TARGETARCH
 
-COPY ./ntfa/go.* ./
+COPY ./go.* ./
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
-COPY ./ntfa .
+COPY . .
 
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
     go build -o ./ntfa -ldflags "-s -w" .
@@ -29,7 +30,6 @@ FROM gcr.io/distroless/static-debian11:nonroot
 COPY --from=build /app/ntfa /app/ntfa
 
 ENTRYPOINT ["/app/ntfa"]
-#CMD []
 
 LABEL org.opencontainers.image.title=new-traefik-forward-auth
 LABEL org.opencontainers.image.description="New Forward authentication service for the Traefik reverse proxy"
