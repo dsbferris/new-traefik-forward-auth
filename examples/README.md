@@ -18,6 +18,19 @@ If you are using Auth Host Mode, this will just be your auth-host (e.g. https://
 ## Providers
 
 ### Keycloak (selfhosted)
+`PROVIDERS_OIDC_ISSUER_URL=https://keycloak.example.com/realms/example`
+`PROVIDERS_OIDC_CLIENT_ID=YOUR_CLIENT_ID`
+`PROVIDERS_OIDC_CLIENT_SECRET=YOUR_CLIENT_SECRET`
+
+1. Create a new Realm, named example here.
+2. Create a client
+   1. Type: OIDC
+   2. Choose a client id, here example_id
+   3. In Capability turn on "Client Authentication"
+   4. In Login Settings set "Valid redirect URIs"
+      1. If using Auth-Host (recommended) "https://auth.example.com/auth"
+      2. If NOT using Auth-Host "https://whoami.example.com"
+   5. Go to Credentials and copy the Client Secret
 
 ### Gitea (selfhosted)
 
