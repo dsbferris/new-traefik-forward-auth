@@ -17,7 +17,6 @@ import (
 	"github.com/dsbferris/new-traefik-forward-auth/internal/provider"
 )
 
-// Request Validation
 var (
 	ErrCookieInvalidFormat = errors.New("invalid cookie format")
 	ErrCookieMacDecode     = errors.New("unable to decode cookie mac")
@@ -46,6 +45,7 @@ var (
 	ErrCsrfStateValue   = errors.New("invalid CSRF state value")
 )
 
+// Request Validation
 type Auth struct {
 	config *appconfig.AppConfig
 }
