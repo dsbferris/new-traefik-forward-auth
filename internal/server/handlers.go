@@ -18,13 +18,14 @@ func (s *Server) authHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", 401)
 	}
 
-	ipAddr := escapeNewlines(r.Header.Get("X-Forwarded-For"))
+	ipAddr := escapeNewlines(r.Header.Get("X-Real-Ip"))
+	//ipAddr := escapeNewlines(r.Header.Get("X-Forwarded-For"))
 	if ipAddr == "" {
-		logger.Warn("missing x-forwarded-for header")
+		logger.Warn("missing X-Real-Ip header")
 	} else {
 		ok, err := s.config.Whitelist.Networks.ConatainsIp(ipAddr)
 		if err != nil {
-			logger.Warn("invalid forwarded for", slog.String("error", err.Error()))
+			logger.Warn("invalid X-Real-Ip", slog.String("error", err.Error()))
 		} else if ok {
 			logger.Info("authenticated remote address", slog.String("addr", ipAddr))
 			w.WriteHeader(200)
