@@ -162,7 +162,7 @@ func TestServerAuthHandlerTrustedIP_trusted(t *testing.T) {
 
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
-	req.Header.Set("X-Forwarded-For", "127.0.0.2")
+	req.Header.Set("X-Real-Ip", "127.0.0.2")
 
 	res, _ := doHttpRequest(req, nil, config)
 	assert.Equal(200, res.StatusCode, "trusted ip should be allowed")
@@ -174,7 +174,7 @@ func TestServerAuthHandlerTrustedIP_notTrusted(t *testing.T) {
 
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
-	req.Header.Set("X-Forwarded-For", "127.0.0.1")
+	req.Header.Set("X-Real-Ip", "127.0.0.1")
 
 	res, _ := doHttpRequest(req, nil, config)
 	assert.Equal(307, res.StatusCode, "untrusted ip should not be allowed")
@@ -185,7 +185,7 @@ func TestServerAuthHandlerTrustedIP_invalidAddress(t *testing.T) {
 	config := newOauthConfig()
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
-	req.Header.Set("X-Forwarded-For", "127.0")
+	req.Header.Set("X-Real-Ip", "127.0")
 
 	res, _ := doHttpRequest(req, nil, config)
 	assert.Equal(307, res.StatusCode, "invalid ip should not be allowed")
@@ -512,6 +512,6 @@ func newHTTPRequest(method, target string) *http.Request {
 	r.Header.Add("X-Forwarded-Proto", u.Scheme)
 	r.Header.Add("X-Forwarded-Host", u.Host)
 	r.Header.Add("X-Forwarded-Uri", u.RequestURI())
-	r.Header.Add("X-Forwarded-For", "127.0.0.1")
+	r.Header.Add("X-Real-Ip", "127.0.0.1")
 	return r
 }

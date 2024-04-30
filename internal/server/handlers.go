@@ -18,8 +18,12 @@ func (s *Server) authHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", 401)
 	}
 
+	// TODO X-Forwarded-For can be a comma-separated list of ips...
+	// https://stackoverflow.com/questions/72557636/difference-between-x-forwarded-for-and-x-real-ip-headers
+	// TODO can this stuff be spoofed and be a vulnerability?
+
+	// prefer X-Real-Ip over X-Forwarded-For
 	ipAddr := escapeNewlines(r.Header.Get("X-Real-Ip"))
-	//ipAddr := escapeNewlines(r.Header.Get("X-Forwarded-For"))
 	if ipAddr == "" {
 		logger.Warn("missing X-Real-Ip header")
 	} else {
