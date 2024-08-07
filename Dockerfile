@@ -1,12 +1,12 @@
 # Start by building the application.
 # https://hub.docker.com/_/golang
 # https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
-FROM --platform=$BUILDPLATFORM golang:1.22.2 as build
+FROM --platform=$BUILDPLATFORM golang:1.22.6 AS build
 
 WORKDIR /app
 
 # No shared libs in distroless
-ENV CGO_ENABLED 0
+ENV CGO_ENABLED=0
 
 ARG TARGETOS
 ARG TARGETARCH
