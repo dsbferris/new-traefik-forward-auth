@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
 
 ##################################
 # Now copy it into our base image.
-FROM gcr.io/distroless/static-debian11:nonroot
+FROM gcr.io/distroless/static-debian12:nonroot
 
 COPY --from=build /app/ntfa /app/ntfa
 
